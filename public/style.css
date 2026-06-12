@@ -1,22 +1,27 @@
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Inter:wght@300;400;500;600&display=swap');
 
-/* Quarto — exklusivt och modernt. Matt nästan-svart, hårfina linjer,
-   en enda accent i mässing. Typografin bär rummet; effekterna viskar. */
+/* Quarto — ljust, sofistikerat, elegant. Varmt alabaster och porslin,
+   bläcksvart typografi, en enda accent i mässing. Objekt på papper. */
 
 :root {
-  --bg: #0b0b0d;
-  --surface: #131316;
-  --surface-2: #1b1b1f;
-  --well: #18181c;
-  --line: rgba(255, 255, 255, 0.08);
-  --line-strong: rgba(255, 255, 255, 0.16);
-  --text: #ece7df;
-  --text-dim: #8e8c87;
-  --brass: #c8a96a;
-  --brass-bright: #e0c388;
-  --brass-dim: rgba(200, 169, 106, 0.45);
-  --brass-faint: rgba(200, 169, 106, 0.18);
-  --rose: #b8705f;
+  --bg: #f4f1ea;
+  --bg-high: #faf8f3;
+  --surface: #fdfcf8;
+  --board-face: #e9e3d5;
+  --cell-bone: #f6f2e8;
+  --cell-bone-alt: #f1ecdf;
+  --ink: #2a2722;
+  --ink-dim: #8d857a;
+  --line: rgba(42, 39, 34, 0.1);
+  --line-strong: rgba(42, 39, 34, 0.2);
+  --brass: #a8854a;
+  --brass-bright: #c8a96a;
+  --brass-dim: rgba(168, 133, 74, 0.5);
+  --brass-faint: rgba(168, 133, 74, 0.14);
+  --rose: #b06a55;
+
+  --shadow-soft: 0 18px 50px rgba(78, 62, 36, 0.16), 0 4px 12px rgba(78, 62, 36, 0.08);
+  --shadow-card: 0 10px 34px rgba(78, 62, 36, 0.12);
 
   --serif: 'Fraunces', Georgia, serif;
   --sans: 'Inter', -apple-system, sans-serif;
@@ -35,9 +40,9 @@ body {
   overflow: hidden;
   font-family: var(--sans);
   font-weight: 400;
-  color: var(--text);
+  color: var(--ink);
   background-color: var(--bg);
-  background-image: radial-gradient(120% 90% at 50% -10%, #15151a 0%, var(--bg) 60%);
+  background-image: radial-gradient(110% 80% at 50% -8%, var(--bg-high) 0%, var(--bg) 62%);
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
   user-select: none;
@@ -67,11 +72,11 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
 .logo {
   font-family: var(--serif);
   font-size: 44px;
-  font-weight: 350;
+  font-weight: 360;
   letter-spacing: 0.32em;
-  text-indent: 0.32em; /* optisk centrering av trackad versaltext */
+  text-indent: 0.32em;
   text-transform: uppercase;
-  color: var(--text);
+  color: var(--ink);
 }
 
 .logo .dot { color: var(--brass); }
@@ -88,11 +93,11 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   font-style: italic;
   font-size: 17px;
   font-weight: 340;
-  color: var(--text-dim);
+  color: var(--ink-dim);
   margin-bottom: 44px;
 }
 
-.identity-buttons { display: flex; gap: 40px; }
+.identity-buttons { display: flex; gap: 44px; }
 
 .identity {
   display: flex;
@@ -105,18 +110,20 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
 }
 
 .portrait-ring {
-  width: 104px;
-  height: 104px;
+  width: 106px;
+  height: 106px;
   border-radius: 50%;
   border: 1px solid var(--line-strong);
   padding: 5px;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
   transition: border-color 0.35s, box-shadow 0.35s, transform 0.25s;
 }
 
 .identity:hover .portrait-ring,
 .identity:focus-visible .portrait-ring {
   border-color: var(--brass);
-  box-shadow: 0 0 24px rgba(200, 169, 106, 0.18);
+  box-shadow: 0 14px 40px rgba(168, 133, 74, 0.28);
 }
 
 .identity:active .portrait-ring { transform: scale(0.97); }
@@ -127,7 +134,6 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   object-fit: cover;
   border-radius: 50%;
   display: block;
-  filter: saturate(0.82) contrast(1.02);
 }
 
 .identity span {
@@ -136,11 +142,11 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   letter-spacing: 0.28em;
   text-indent: 0.28em;
   text-transform: uppercase;
-  color: var(--text-dim);
+  color: var(--ink-dim);
   transition: color 0.3s;
 }
 
-.identity:hover span { color: var(--text); }
+.identity:hover span { color: var(--ink); }
 
 /* ================= SPELYTAN ================= */
 
@@ -155,7 +161,7 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   padding: calc(8px + env(safe-area-inset-top)) 14px calc(10px + env(safe-area-inset-bottom));
 }
 
-/* ----- Toppbar: luftig rad med hårfin linje under ----- */
+/* ----- Toppbar ----- */
 
 .topbar {
   position: relative;
@@ -181,18 +187,16 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   border-radius: 50%;
   border: 1px solid var(--line-strong);
   padding: 2px;
-  background: var(--bg);
-  filter: saturate(0.75);
+  background: var(--surface);
   transition: border-color 0.4s, box-shadow 0.4s, filter 0.4s, opacity 0.4s;
 }
 
 .player-card.active .avatar {
   border-color: var(--brass);
-  box-shadow: 0 0 14px rgba(200, 169, 106, 0.25);
-  filter: saturate(1);
+  box-shadow: 0 0 0 1px rgba(168, 133, 74, 0.2), 0 6px 16px rgba(168, 133, 74, 0.3);
 }
 
-.player-card.offline .avatar { filter: grayscale(1) brightness(0.6); }
+.player-card.offline .avatar { filter: grayscale(1); opacity: 0.55; }
 
 .status-dot {
   position: absolute;
@@ -204,7 +208,7 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   border: 2px solid var(--bg);
 }
 .status-dot.online { background: var(--brass); }
-.status-dot.offline { background: transparent; box-shadow: inset 0 0 0 1.5px var(--text-dim); }
+.status-dot.offline { background: transparent; box-shadow: inset 0 0 0 1.5px var(--ink-dim); }
 
 .player-meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .player-meta.right { align-items: flex-end; }
@@ -214,32 +218,32 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   font-weight: 600;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--text-dim);
+  color: var(--ink-dim);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   transition: color 0.4s;
 }
 
-.player-card.active .name { color: var(--text); }
+.player-card.active .name { color: var(--ink); }
 
 .player-meta .sub {
   font-size: 10px;
   font-weight: 400;
   letter-spacing: 0.08em;
-  color: var(--text-dim);
-  opacity: 0.7;
+  color: var(--ink-dim);
+  opacity: 0.75;
 }
-.player-meta .sub.online { color: var(--brass); opacity: 0.9; }
+.player-meta .sub.online { color: var(--brass); opacity: 1; }
 
 .score-wrap { text-align: center; padding: 0 6px; }
 
 .score {
   font-family: var(--serif);
   font-size: 24px;
-  font-weight: 360;
+  font-weight: 380;
   letter-spacing: 0.08em;
-  color: var(--text);
+  color: var(--ink);
   white-space: nowrap;
   font-variant-numeric: lining-nums;
 }
@@ -253,11 +257,11 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   height: 36px;
   background: none;
   border: none;
-  color: var(--text-dim);
+  color: var(--ink-dim);
   font-size: 18px;
   cursor: pointer;
 }
-#menu-btn:hover { color: var(--text); }
+#menu-btn:hover { color: var(--ink); }
 
 .menu {
   position: absolute;
@@ -270,23 +274,22 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   border: 1px solid var(--line-strong);
   border-radius: 10px;
   padding: 4px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  box-shadow: var(--shadow-soft);
   white-space: nowrap;
 }
 
 .menu button {
   background: none;
   border: none;
-  color: var(--text-dim);
+  color: var(--ink-dim);
   font-size: 13px;
   font-weight: 400;
-  letter-spacing: 0.02em;
   padding: 10px 16px;
   border-radius: 7px;
   cursor: pointer;
   text-align: left;
 }
-.menu button:hover { background: rgba(255, 255, 255, 0.05); color: var(--text); }
+.menu button:hover { background: rgba(42, 39, 34, 0.05); color: var(--ink); }
 .menu button.armed { color: var(--rose); }
 
 /* ----- Uppgiftsraden ----- */
@@ -322,7 +325,7 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   justify-content: center;
 }
 
-.task-piece svg { width: 32px; height: 46px; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.5)); }
+.task-piece svg { width: 32px; height: 46px; filter: drop-shadow(0 3px 4px rgba(78, 62, 36, 0.3)); }
 
 .task-placeholder {
   width: 24px;
@@ -336,24 +339,24 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
 
 #task-title {
   font-family: var(--serif);
-  font-size: 17px;
-  font-weight: 380;
-  color: var(--text-dim);
+  font-size: 17.5px;
+  font-weight: 400;
+  color: var(--ink-dim);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   transition: color 0.3s;
 }
 
-.task.mine #task-title { color: var(--text); }
+.task.mine #task-title { color: var(--ink); }
 
 #task-sub {
   font-size: 11px;
-  font-weight: 400;
+  font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--text-dim);
-  opacity: 0.75;
+  color: var(--ink-dim);
+  opacity: 0.8;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -376,29 +379,29 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   grid-template-rows: repeat(4, 1fr);
   gap: 7px;
   padding: 12px;
-  background: linear-gradient(165deg, #16161a 0%, #101013 100%);
+  background: linear-gradient(168deg, #ece6d8 0%, var(--board-face) 55%, #e2dbca 100%);
   border: 1px solid var(--line-strong);
   border-radius: 22px;
   box-shadow:
-    0 0 0 1px rgba(200, 169, 106, 0.14),
-    0 24px 60px rgba(0, 0, 0, 0.55),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    0 0 0 1px rgba(168, 133, 74, 0.16),
+    var(--shadow-soft),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 .cell {
   position: relative;
-  background: var(--surface-2);
+  background: var(--cell-bone);
   border: 1px solid var(--line);
   border-radius: 13px;
   cursor: default;
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.35);
+  box-shadow: inset 0 2px 5px rgba(78, 62, 36, 0.12);
   transition: background 0.25s, border-color 0.25s;
   padding: 0;
   min-height: 0;
   min-width: 0;
 }
 
-.cell.alt { background: var(--well); }
+.cell.alt { background: var(--cell-bone-alt); }
 
 /* diskret cirkulär försänkning i varje ruta */
 .cell::before {
@@ -406,8 +409,8 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   position: absolute;
   inset: 18%;
   border-radius: 50%;
-  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.35);
-  opacity: 0.5;
+  box-shadow: inset 0 1px 4px rgba(78, 62, 36, 0.16);
+  opacity: 0.6;
 }
 
 .cell-piece {
@@ -422,18 +425,17 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
 .cell-piece svg {
   height: 96%;
   max-width: 100%;
-  filter: drop-shadow(0 4px 5px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(0 4px 5px rgba(78, 62, 36, 0.32));
   transform-origin: 50% 88%;
 }
 
 .cell.placeable {
   cursor: pointer;
-  border-color: var(--brass-dim);
   animation: breathe 2.2s ease-in-out infinite;
 }
 
-.cell.placeable:hover { background: #232328; border-color: var(--brass); }
-.cell.placeable:active { background: #0f0f12; }
+.cell.placeable:hover { background: #fbf8f0; border-color: var(--brass); }
+.cell.placeable:active { background: #ece5d4; }
 
 @keyframes breathe {
   0%, 100% { border-color: var(--brass-faint); }
@@ -442,7 +444,7 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
 
 .cell.last {
   border-color: var(--brass-dim);
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.35), inset 0 0 0 1px var(--brass-dim);
+  box-shadow: inset 0 2px 5px rgba(78, 62, 36, 0.12), inset 0 0 0 1px var(--brass-dim);
 }
 
 .cell.win {
@@ -451,8 +453,8 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
 }
 
 @keyframes winPulse {
-  0%, 100% { box-shadow: inset 0 0 10px rgba(200, 169, 106, 0.12); }
-  50% { box-shadow: inset 0 0 22px rgba(200, 169, 106, 0.38); }
+  0%, 100% { box-shadow: inset 0 0 10px rgba(168, 133, 74, 0.18); }
+  50% { box-shadow: inset 0 0 24px rgba(168, 133, 74, 0.45); }
 }
 
 /* Flygande pjäs under FLIP-animation */
@@ -463,7 +465,7 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   transform-origin: top left;
   will-change: transform;
 }
-.flying svg { width: 100%; height: 100%; filter: drop-shadow(0 6px 9px rgba(0, 0, 0, 0.55)); }
+.flying svg { width: 100%; height: 100%; filter: drop-shadow(0 6px 9px rgba(78, 62, 36, 0.38)); }
 
 /* Diskret skälvning vid vinst */
 .board.shake { animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
@@ -487,17 +489,18 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   border: 1px solid var(--line);
   border-radius: 16px;
   padding: 8px;
+  box-shadow: var(--shadow-card);
   transition: border-color 0.35s, box-shadow 0.35s;
 }
 
 .pool.armed {
   border-color: var(--brass-dim);
-  box-shadow: 0 0 18px rgba(200, 169, 106, 0.08);
+  box-shadow: 0 10px 34px rgba(168, 133, 74, 0.18);
 }
 
 .slot {
   position: relative;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(42, 39, 34, 0.025);
   border: none;
   border-radius: 9px;
   cursor: default;
@@ -505,7 +508,7 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   align-items: flex-end;
   justify-content: center;
   padding: 2px 1px;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+  box-shadow: inset 0 1px 3px rgba(78, 62, 36, 0.12);
   min-width: 0;
   min-height: 0;
   overflow: hidden;
@@ -515,16 +518,16 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
 .slot svg {
   height: 94%;
   max-width: 100%;
-  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.45));
+  filter: drop-shadow(0 2px 3px rgba(78, 62, 36, 0.3));
   transition: opacity 0.3s;
 }
 
 .slot.taken svg { opacity: 0; }
-.slot.taken { box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.55); }
+.slot.taken { box-shadow: inset 0 2px 5px rgba(78, 62, 36, 0.18); }
 
 .slot.selectable { cursor: pointer; }
 .slot.selectable:hover { background: var(--brass-faint); }
-.slot.selectable:active { background: rgba(200, 169, 106, 0.3); }
+.slot.selectable:active { background: rgba(168, 133, 74, 0.28); }
 
 /* ----- Bottenraden ----- */
 
@@ -542,26 +545,29 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   letter-spacing: 0.34em;
   text-indent: 0.34em;
   text-transform: uppercase;
-  color: var(--brass);
-  background: transparent;
-  border: 1px solid var(--brass-dim);
+  color: var(--bg-high);
+  background: var(--ink);
+  border: 1px solid var(--ink);
   border-radius: 14px;
   cursor: pointer;
-  transition: background 0.25s, color 0.25s, border-color 0.25s, opacity 0.3s, transform 0.1s;
+  box-shadow: var(--shadow-card);
+  transition: background 0.25s, color 0.25s, border-color 0.25s, opacity 0.3s, transform 0.1s, box-shadow 0.25s;
 }
 
 .quarto-btn:not(:disabled):hover {
   background: var(--brass);
   border-color: var(--brass);
-  color: #131313;
+  color: #fffdf8;
 }
 .quarto-btn:not(:disabled):active { transform: scale(0.985); }
 
 .quarto-btn:disabled {
-  color: var(--text-dim);
+  color: var(--ink-dim);
+  background: transparent;
   border-color: var(--line);
-  opacity: 0.38;
+  opacity: 0.45;
   cursor: default;
+  box-shadow: none;
 }
 
 .draw-btn {
@@ -569,7 +575,7 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.1em;
-  color: var(--text-dim);
+  color: var(--ink-dim);
   background: transparent;
   border: 1px solid var(--line-strong);
   border-radius: 14px;
@@ -577,7 +583,7 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   cursor: pointer;
   transition: color 0.25s, border-color 0.25s;
 }
-.draw-btn:hover { color: var(--text); border-color: var(--text-dim); }
+.draw-btn:hover { color: var(--ink); border-color: var(--ink-dim); }
 
 /* ================= SPELSLUT-OVERLAY ================= */
 
@@ -585,9 +591,9 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   position: fixed;
   inset: 0;
   z-index: 800;
-  background: rgba(8, 8, 10, 0.66);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(244, 241, 234, 0.55);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
   display: grid;
   place-items: end center;
   padding: 0 20px calc(30px + env(safe-area-inset-bottom));
@@ -601,7 +607,7 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   border: 1px solid var(--line-strong);
   border-radius: 20px;
   padding: 30px 26px 24px;
-  box-shadow: 0 0 0 1px rgba(200, 169, 106, 0.12), 0 30px 70px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 0 0 1px rgba(168, 133, 74, 0.14), var(--shadow-soft);
   animation: riseIn 0.5s cubic-bezier(0.18, 1.1, 0.3, 1);
 }
 
@@ -613,18 +619,17 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
 #gameover-title {
   font-family: var(--serif);
   font-size: 32px;
-  font-weight: 380;
-  letter-spacing: 0.01em;
+  font-weight: 400;
   color: var(--rose);
 }
 
-.gameover.win #gameover-title { color: var(--brass-bright); }
+.gameover.win #gameover-title { color: var(--brass); }
 
 #gameover-sub {
   margin-top: 10px;
   font-size: 13.5px;
   font-weight: 400;
-  color: var(--text-dim);
+  color: var(--ink-dim);
   line-height: 1.5;
 }
 
@@ -640,7 +645,7 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   font-style: italic;
   font-size: 13.5px;
   font-weight: 350;
-  color: var(--text-dim);
+  color: var(--ink-dim);
   line-height: 1.5;
 }
 
@@ -652,15 +657,15 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   letter-spacing: 0.28em;
   text-indent: 0.28em;
   text-transform: uppercase;
-  color: var(--brass);
-  background: transparent;
-  border: 1px solid var(--brass-dim);
+  color: var(--bg-high);
+  background: var(--ink);
+  border: 1px solid var(--ink);
   border-radius: 13px;
   padding: 15px 0;
   cursor: pointer;
-  transition: background 0.25s, color 0.25s, border-color 0.25s;
+  transition: background 0.25s, border-color 0.25s;
 }
-.new-game-btn:hover { background: var(--brass); border-color: var(--brass); color: #131313; }
+.new-game-btn:hover { background: var(--brass); border-color: var(--brass); }
 .new-game-btn:active { transform: scale(0.985); }
 
 /* ================= FLYTANDE LAGER ================= */
@@ -677,12 +682,12 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   white-space: nowrap;
   pointer-events: none;
   transform: translate(-50%, -50%) rotate(var(--tilt, 0deg));
-  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.8);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6), 0 8px 30px rgba(78, 62, 36, 0.35);
   animation: kudosPop 1.7s cubic-bezier(0.2, 0.9, 0.25, 1) forwards;
 }
 
-.kudos.champagne { color: var(--brass-bright); }
-.kudos.ivory { color: var(--text); }
+.kudos.champagne { color: var(--brass); }
+.kudos.ivory { color: var(--ink); }
 .kudos.rose { color: var(--rose); }
 
 @keyframes kudosPop {
@@ -698,7 +703,7 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   top: 21%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: rgba(11, 11, 13, 0.92);
+  background: rgba(253, 252, 248, 0.96);
   border: 1px solid var(--line-strong);
   border-radius: 999px;
   padding: 11px 26px;
@@ -709,7 +714,7 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   text-indent: 0.3em;
   text-transform: uppercase;
   text-align: center;
-  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55);
+  box-shadow: var(--shadow-soft);
   z-index: 1500;
   pointer-events: none;
   white-space: nowrap;
@@ -739,14 +744,14 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   bottom: calc(76px + env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
-  background: var(--surface);
-  color: var(--text);
-  border: 1px solid var(--line-strong);
+  background: var(--ink);
+  color: var(--bg-high);
+  border: none;
   font-size: 13px;
   font-weight: 400;
   padding: 10px 24px;
   border-radius: 999px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+  box-shadow: var(--shadow-soft);
   z-index: 3000;
   white-space: nowrap;
 }

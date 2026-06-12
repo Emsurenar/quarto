@@ -34,27 +34,28 @@ function pieceSVG(id) {
   const square = id & 4;
   const hollow = id & 8;
 
-  // Champagne-metall mot grafit: maskinbearbetade objekt, inte leksaker.
+  // Champagne-metall mot varm espresso-grafit: maskinbearbetade objekt
+  // i samma varma register som det ljusa alabaster-rummet.
   const c = dark
     ? {
         grad: 'qg-d',
-        g1: '#585862',
-        g2: '#1d1d22',
-        top: '#6a6a75',
-        stroke: '#0a0a0c',
-        hole: '#060607',
-        holeRim: 'rgba(225, 225, 240, 0.4)',
-        gloss: 'rgba(255, 255, 255, 0.16)',
+        g1: '#5c554c',
+        g2: '#211d18',
+        top: '#6e665b',
+        stroke: '#14110d',
+        hole: '#0a0806',
+        holeRim: 'rgba(244, 234, 214, 0.45)',
+        gloss: 'rgba(255, 250, 240, 0.18)',
       }
     : {
         grad: 'qg-l',
-        g1: '#eedcae',
-        g2: '#a6824c',
-        top: '#f6ebc9',
-        stroke: '#6e5526',
-        hole: '#4d3a16',
-        holeRim: 'rgba(60, 44, 14, 0.6)',
-        gloss: 'rgba(255, 255, 255, 0.45)',
+        g1: '#ecd7a4',
+        g2: '#9c7840',
+        top: '#f4e7c2',
+        stroke: '#63491c',
+        hole: '#46330f',
+        holeRim: 'rgba(55, 40, 12, 0.6)',
+        gloss: 'rgba(255, 255, 255, 0.5)',
       };
 
   const topY = tall ? 7 : 41; // överdriven höjdskillnad gör hög/låg omisskännlig
@@ -628,7 +629,7 @@ class DustParticle {
     if (!confettiCtx) return;
     confettiCtx.beginPath();
     confettiCtx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-    confettiCtx.fillStyle = `rgba(224, 195, 136, ${this.alpha})`;
+    confettiCtx.fillStyle = `rgba(168, 133, 74, ${this.alpha})`;
     confettiCtx.fill();
   }
 }
