@@ -35,6 +35,31 @@ function broadcastState() {
   io.emit('state', fullState());
 }
 
+// Små utrop som ibland belönar drag. Heta drag (skapar tre i rad med
+// gemensam egenskap) belönas oftare, men även vanliga drag kan få beröm —
+// slumpen gör att utropet aldrig är en pålitlig signal om brädesläget.
+const KUDOS = [
+  'Woah!',
+  'Nämen!',
+  'Oj oj oj!',
+  'Snyggt!',
+  'Listigt …',
+  'Vågat!',
+  'Aj aj aj!',
+  'Mästerligt!',
+  'Dramatik!',
+  '哇 — woah!',
+];
+
+function maybeKudos(player, cell) {
+  if (match.game.gameOver) return;
+  const threats = logic.placementThreats(match.game.board, cell);
+  const chance = threats > 0 ? 0.65 : 0.15;
+  if (Math.random() >= chance) return;
+  const text = KUDOS[Math.floor(Math.random() * KUDOS.length)];
+  io.emit('kudos', { text, player });
+}
+
 io.on('connection', (socket) => {
   let player = null;
 
@@ -60,7 +85,14 @@ io.on('connection', (socket) => {
   }
 
   socket.on('selectPiece', (piece) => handle(logic.selectPiece, piece));
-  socket.on('placePiece', (cell) => handle(logic.placePiece, cell));
+
+  socket.on('placePiece', (cell) => {
+    if (!player) return;
+    const result = logic.placePiece(match, player, cell);
+    if (!result.ok) return socket.emit('errorMsg', result.error);
+    broadcastState();
+    maybeKudos(player, cell);
+  });
   socket.on('claimQuarto', () => handle(logic.claimQuarto));
   socket.on('claimDraw', () => handle(logic.claimDraw));
 

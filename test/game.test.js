@@ -4,6 +4,7 @@ const {
   PLAYERS,
   otherPlayer,
   findWinningLine,
+  placementThreats,
   createMatch,
   createGame,
   selectPiece,
@@ -146,6 +147,39 @@ test('inga drag accepteras efter spelets slut', () => {
   assert.ok(!selectPiece(m, 'Rakel', 1).ok);
   assert.ok(!placePiece(m, 'Rakel', 1).ok);
   assert.ok(!claimQuarto(m, 'Rakel').ok);
+});
+
+test('lastMove pekar på senast placerade rutan', () => {
+  const m = matchWithStarter('Emre');
+  assert.strictEqual(m.game.lastMove, null);
+  selectPiece(m, 'Emre', 4);
+  placePiece(m, 'Rakel', 9);
+  assert.strictEqual(m.game.lastMove, 9);
+});
+
+test('placementThreats räknar rader med tre pjäser och gemensam egenskap', () => {
+  const board = Array(16).fill(null);
+  // Rad 0 har tre mörka pjäser (1, 3, 5) – placeringen på ruta 2 fullbordar hotet.
+  board[0] = 1; board[1] = 3; board[2] = 5;
+  assert.strictEqual(placementThreats(board, 2), 1);
+  // En ensam pjäs hotar ingenting.
+  const lone = Array(16).fill(null);
+  lone[0] = 1;
+  assert.strictEqual(placementThreats(lone, 0), 0);
+  // Tre pjäser utan gemensam egenskap är inget hot: 0 (0000), 15 (1111), 5 (0101).
+  const mixed = Array(16).fill(null);
+  mixed[0] = 0; mixed[1] = 15; mixed[2] = 5;
+  assert.strictEqual(placementThreats(mixed, 2), 0);
+  // En placering i ett hörn kan hota flera rader samtidigt:
+  // pjäs 1 (mörk) på ruta 0 ger tre mörka i både rad 0 och kolumn 0.
+  const corner = Array(16).fill(null);
+  corner[0] = 1;                  // placeringen själv
+  corner[1] = 3; corner[2] = 5;   // rad 0: tre mörka
+  corner[4] = 7; corner[8] = 9;   // kolumn 0: tre mörka
+  assert.strictEqual(placementThreats(corner, 0), 2);
+  // En fullbordad rad (fyra pjäser) räknas inte som hot.
+  corner[3] = 11;
+  assert.strictEqual(placementThreats(corner, 0), 1);
 });
 
 test('otherPlayer växlar mellan de två spelarna', () => {

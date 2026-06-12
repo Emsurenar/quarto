@@ -53,12 +53,28 @@ function createGame(starter) {
     turn: starter,
     starter,
     phase: 'select',
+    lastMove: null, // senast placerade ruta, för markering i UI:t
     gameOver: false,
     winner: null,
     draw: false,
     winningLine: null,
     endReason: null, // 'quarto' | 'falseClaim' | 'draw'
   };
+}
+
+// Räknar "heta" rader genom en nyss placerad ruta: rader med exakt tre
+// pjäser som delar minst en egenskap. Används för att belöna spännande drag.
+function placementThreats(board, cell) {
+  let threats = 0;
+  for (const line of LINES) {
+    if (!line.includes(cell)) continue;
+    const pieces = line.map((i) => board[i]).filter((p) => p !== null);
+    if (pieces.length !== 3) continue;
+    const allSet = pieces.reduce((acc, p) => acc & p, 0xf);
+    const allClear = pieces.reduce((acc, p) => acc & ~p, 0xf);
+    if (allSet !== 0 || allClear !== 0) threats += 1;
+  }
+  return threats;
 }
 
 // Alla actions returnerar { ok: true } eller { ok: false, error: '...' }
@@ -88,6 +104,7 @@ function placePiece(match, player, cell) {
 
   g.board[cell] = g.selectedPiece;
   g.selectedPiece = null;
+  g.lastMove = cell;
   g.phase = 'select';
   // turn förblir samma spelare: hen väljer nu nästa pjäs (eller ropar Quarto).
   return { ok: true };
@@ -145,6 +162,7 @@ module.exports = {
   LINES,
   otherPlayer,
   findWinningLine,
+  placementThreats,
   createMatch,
   createGame,
   selectPiece,

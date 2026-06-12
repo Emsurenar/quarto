@@ -13,7 +13,8 @@ const $ = (id) => document.getElementById(id);
 
 // ---------- Pjäsgrafik ----------
 // Pjäs-id är 4 bitar: bit0 mörk, bit1 hög, bit2 fyrkantig, bit3 ihålig.
-// Sidovy: kropp + ovansida, hål ritas på ovansidan för ihåliga pjäser.
+// Sidovy i "lackerat trä": elfenben mot ebenholts, kraftig höjdskillnad,
+// tydligt hål med ljus kant för ihåliga pjäser, glansstråk för massiva.
 
 function pieceSVG(id) {
   const dark = id & 1;
@@ -21,26 +22,52 @@ function pieceSVG(id) {
   const square = id & 4;
   const hollow = id & 8;
 
-  const body = dark ? '#54331c' : '#dcab6b';
-  const topColor = dark ? '#6e4426' : '#ecc488';
-  const stroke = dark ? '#2e1a0c' : '#9c7236';
-  const hole = dark ? '#1f1107' : '#8a6228';
+  // Elfenben respektive ebenholts-lack, valda för maximal kontrast.
+  const c = dark
+    ? {
+        grad: 'qg-d',
+        g1: '#54281a',
+        g2: '#1f0d06',
+        top: '#6b3520',
+        stroke: '#120802',
+        hole: '#060301',
+        holeRim: 'rgba(255, 214, 140, 0.7)',
+        gloss: 'rgba(255, 235, 200, 0.28)',
+      }
+    : {
+        grad: 'qg-l',
+        g1: '#f8ecd0',
+        g2: '#d3b27c',
+        top: '#fdf6e0',
+        stroke: '#a8803f',
+        hole: '#6e5121',
+        holeRim: 'rgba(80, 55, 15, 0.65)',
+        gloss: 'rgba(255, 255, 255, 0.55)',
+      };
 
-  const topY = tall ? 10 : 34;
-  const h = 60 - topY;
-  let shapes = '';
+  const topY = tall ? 7 : 41; // överdriven höjdskillnad gör hög/låg omisskännlig
+  const h = 66 - topY;
+  let s = `<defs><linearGradient id="${c.grad}" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="${c.g1}"/><stop offset="0.55" stop-color="${c.g1}"/>
+    <stop offset="1" stop-color="${c.g2}"/></linearGradient></defs>`;
 
   if (square) {
-    shapes += `<rect x="7" y="${topY}" width="30" height="${h}" rx="3" fill="${body}" stroke="${stroke}" stroke-width="1.5"/>`;
-    shapes += `<rect x="7" y="${topY}" width="30" height="7" rx="3" fill="${topColor}" stroke="${stroke}" stroke-width="1.2"/>`;
-    if (hollow) shapes += `<rect x="15" y="${topY + 1.6}" width="14" height="3.8" rx="1.8" fill="${hole}"/>`;
+    s += `<rect x="6" y="${topY}" width="36" height="${h}" rx="3.5" fill="url(#${c.grad})" stroke="${c.stroke}" stroke-width="1.6"/>`;
+    s += `<rect x="6" y="${topY}" width="36" height="9" rx="3.5" fill="${c.top}" stroke="${c.stroke}" stroke-width="1.3"/>`;
+    s += `<rect x="9.5" y="${topY + 11}" width="4" height="${h - 15}" rx="2" fill="${c.gloss}"/>`;
+    if (hollow) {
+      s += `<rect x="15" y="${topY + 2.2}" width="18" height="4.8" rx="2.4" fill="${c.hole}" stroke="${c.holeRim}" stroke-width="1.1"/>`;
+    }
   } else {
-    shapes += `<path d="M7 ${topY + 4} v${h - 10} a15 6 0 0 0 30 0 v-${h - 10} z" fill="${body}" stroke="${stroke}" stroke-width="1.5"/>`;
-    shapes += `<ellipse cx="22" cy="${topY + 4}" rx="15" ry="5.5" fill="${topColor}" stroke="${stroke}" stroke-width="1.2"/>`;
-    if (hollow) shapes += `<ellipse cx="22" cy="${topY + 4}" rx="7" ry="2.6" fill="${hole}"/>`;
+    s += `<path d="M6 ${topY + 5} v${h - 12} a18 7 0 0 0 36 0 v-${h - 12} z" fill="url(#${c.grad})" stroke="${c.stroke}" stroke-width="1.6"/>`;
+    s += `<ellipse cx="24" cy="${topY + 5}" rx="18" ry="6.5" fill="${c.top}" stroke="${c.stroke}" stroke-width="1.3"/>`;
+    s += `<path d="M10.5 ${topY + 12} v${h - 22} a14 5 0 0 0 3.5 3 v-${h - 22}z" fill="${c.gloss}"/>`;
+    if (hollow) {
+      s += `<ellipse cx="24" cy="${topY + 5}" rx="9.5" ry="3.4" fill="${c.hole}" stroke="${c.holeRim}" stroke-width="1.1"/>`;
+    }
   }
 
-  return `<svg viewBox="0 0 44 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${pieceName(id)}">${shapes}</svg>`;
+  return `<svg viewBox="0 0 48 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${pieceName(id)}">${s}</svg>`;
 }
 
 function pieceName(id) {
@@ -49,8 +76,52 @@ function pieceName(id) {
     id & 2 ? 'hög' : 'låg',
     id & 4 ? 'fyrkantig' : 'rund',
     id & 8 ? 'ihålig' : 'massiv',
-  ].join(', ');
+  ].join(' · ');
 }
+
+// ---------- Ljud (syntetiserat, inga filer) ----------
+
+let audioCtx = null;
+
+function tone(freq, start, dur, vol, type = 'sine') {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.value = freq;
+  const t = audioCtx.currentTime + start;
+  gain.gain.setValueAtTime(vol, t);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  osc.connect(gain).connect(audioCtx.destination);
+  osc.start(t);
+  osc.stop(t + dur + 0.05);
+}
+
+function playSound(kind) {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    if (kind === 'place') {
+      tone(190, 0, 0.1, 0.12, 'triangle'); // träklocka
+      tone(950, 0, 0.04, 0.05, 'square');
+    } else if (kind === 'select') {
+      tone(660, 0, 0.07, 0.05, 'triangle');
+    } else if (kind === 'kudos') {
+      tone(523, 0, 0.16, 0.07);
+      tone(784, 0.09, 0.22, 0.07);
+    } else if (kind === 'gong') {
+      tone(98, 0, 2.2, 0.16);
+      tone(196.5, 0, 1.7, 0.08);
+      tone(294.7, 0, 1.2, 0.04);
+    }
+  } catch (e) {
+    /* ljud är aldrig kritiskt */
+  }
+}
+
+// Webbläsare kräver en användargest innan ljud får spelas.
+document.addEventListener('pointerdown', () => {
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+});
 
 // ---------- Anslutning ----------
 
@@ -80,6 +151,7 @@ socket.on('presence', (presence) => {
 });
 
 socket.on('errorMsg', showToast);
+socket.on('kudos', ({ text }) => showKudos(text));
 
 // ---------- Lobby ----------
 
@@ -104,6 +176,11 @@ $('new-game-btn').addEventListener('click', () => socket.emit('newGame'));
 
 // ---------- Rendering ----------
 
+// Föregående tillstånd, för ljud- och animationstriggers.
+let prevPlaced = -1;
+let prevPool = -1;
+let prevGameOver = false;
+
 function opponent() {
   return me === PLAYERS[0] ? PLAYERS[1] : PLAYERS[0];
 }
@@ -115,16 +192,28 @@ function render() {
 
   const g = state.game;
   const myTurn = g.turn === me && !g.gameOver;
+  const placed = g.board.filter((c) => c !== null).length;
+
+  // Ljudeffekter utifrån vad som hänt sedan förra tillståndet.
+  const justPlaced = prevPlaced >= 0 && placed > prevPlaced;
+  if (justPlaced) playSound('place');
+  else if (prevPool >= 0 && g.pool.length < prevPool && placed === prevPlaced) playSound('select');
+  if (!prevGameOver && g.gameOver && !g.draw) playSound('gong');
 
   renderPresence();
   $('score').textContent = `${PLAYERS[0]} ${state.scores[PLAYERS[0]]} – ${state.scores[PLAYERS[1]]} ${PLAYERS[1]}`;
 
   renderActionText(g, myTurn);
-  renderBoard(g, myTurn);
+  renderBoard(g, myTurn, justPlaced);
   renderHand(g);
   renderPool(g, myTurn);
   renderButtons(g, myTurn);
   renderBanner(g);
+  renderProverb(g, placed);
+
+  prevPlaced = placed;
+  prevPool = g.pool.length;
+  prevGameOver = g.gameOver;
 }
 
 function renderPresence() {
@@ -154,7 +243,7 @@ function renderActionText(g, myTurn) {
   }
 }
 
-function renderBoard(g, myTurn) {
+function renderBoard(g, myTurn, justPlaced) {
   const board = $('board');
   board.innerHTML = '';
   const canPlace = myTurn && g.phase === 'place';
@@ -164,6 +253,10 @@ function renderBoard(g, myTurn) {
     const piece = g.board[i];
     if (piece !== null) {
       cell.innerHTML = pieceSVG(piece);
+      if (i === g.lastMove && !g.gameOver) {
+        cell.classList.add('last');
+        if (justPlaced) cell.classList.add('pop');
+      }
     } else if (canPlace) {
       cell.classList.add('placeable');
       cell.addEventListener('click', () => socket.emit('placePiece', i));
@@ -183,6 +276,7 @@ function renderHand(g) {
   const placer = g.turn; // i fasen "place" är det alltid turspelaren som placerar
   $('hand-label').textContent =
     placer === me ? 'Pjäs att placera:' : `${placer} ska placera:`;
+  $('hand-name').textContent = pieceName(g.selectedPiece);
   $('hand-piece').innerHTML = pieceSVG(g.selectedPiece);
 }
 
@@ -212,14 +306,13 @@ function renderButtons(g, myTurn) {
 function renderBanner(g) {
   const banner = $('banner');
   if (!g.gameOver) {
-    banner.classList.add('hidden');
     banner.className = 'banner hidden';
     return;
   }
   banner.classList.remove('hidden');
   if (g.draw) {
     banner.className = 'banner';
-    banner.textContent = 'Oavgjort!';
+    banner.textContent = 'Oavgjort! Brädet vilar.';
     return;
   }
   const mine = g.winner === me;
@@ -231,6 +324,46 @@ function renderBanner(g) {
   } else {
     banner.textContent = mine ? 'Quarto! Du vann! 🎉' : `Quarto! ${g.winner} vann.`;
   }
+}
+
+// ---------- Ordspråk: ett slumpat per parti ----------
+
+const PROVERBS = [
+  'Den som ger bort en hög pjäs sover sällan lugnt.',
+  'Brädet är litet – ångern är stor.',
+  'Fyra i rad gläder ögat, men bara den som ropar vinner.',
+  'En ihålig pjäs väger lätt; ett förhastat utrop väger tungt.',
+  'Den vise ser raden innan den finns.',
+  'Te först, Quarto sedan. Alltid.',
+  'Lugn som vatten, vass som en fyrkantig pjäs.',
+  'Även mästaren började med att ge bort fel pjäs.',
+  'Tystnad är guld. Quarto är jade.',
+  'Motståndarens leende säger mer än brädet.',
+];
+
+let proverbKey = null;
+
+function renderProverb(g, placed) {
+  // Nytt ordspråk när ett nytt parti börjar (tomt bräde, full pool).
+  const key = `${g.starter}-${state.scores[PLAYERS[0]]}-${state.scores[PLAYERS[1]]}`;
+  if (key !== proverbKey) {
+    proverbKey = key;
+    $('proverb').textContent =
+      `„${PROVERBS[Math.floor(Math.random() * PROVERBS.length)]}”`;
+  }
+}
+
+// ---------- Kudos: flygande utrop ----------
+
+function showKudos(text) {
+  const el = document.createElement('div');
+  el.className = 'kudos';
+  el.textContent = text;
+  el.style.setProperty('--tilt', `${(Math.random() * 16 - 8).toFixed(1)}deg`);
+  el.classList.add(['gold', 'red', 'jade'][Math.floor(Math.random() * 3)]);
+  document.body.appendChild(el);
+  playSound('kudos');
+  setTimeout(() => el.remove(), 1700);
 }
 
 // ---------- Toast ----------
