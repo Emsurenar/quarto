@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
-  <meta name="theme-color" content="#070b19" />
+  <meta name="theme-color" content="#0b0b0d" />
   <title>Quarto – Emreos &amp; Raquel</title>
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -12,15 +12,20 @@
   <!-- Startskärm: välj identitet -->
   <section id="lobby" class="lobby">
     <div class="lobby-inner">
-      <h1 class="logo">Quarto <span class="seal">٤</span></h1>
+      <h1 class="logo">Quarto<span class="dot">.</span></h1>
+      <div class="logo-rule"></div>
       <p class="tagline">Vem är du?</p>
       <div class="identity-buttons">
         <button class="identity" data-player="Emreos">
-          <img src="emreos.jpg" alt="Emreos" class="profile-img-lobby" />
+          <span class="portrait-ring">
+            <img src="emreos.jpg" alt="Emreos" class="profile-img-lobby" />
+          </span>
           <span>Emreos</span>
         </button>
         <button class="identity" data-player="Raquel">
-          <img src="raquel.jpg" alt="Raquel" class="profile-img-lobby" />
+          <span class="portrait-ring">
+            <img src="raquel.jpg" alt="Raquel" class="profile-img-lobby" />
+          </span>
           <span>Raquel</span>
         </button>
       </div>
@@ -88,6 +93,7 @@
     <div class="gameover-card">
       <p id="gameover-title"></p>
       <p id="gameover-sub"></p>
+      <div class="gameover-rule"></div>
       <p id="gameover-proverb" class="proverb"></p>
       <button id="new-game-btn" class="new-game-btn">Nytt parti</button>
     </div>

@@ -60,14 +60,21 @@ Pjäser kodas som heltal 0–15 där varje bit är en egenskap. Servern är
 auktoritativ: klienten skickar bara intentioner (`selectPiece`, `placePiece`,
 `claimQuarto`, `claimDraw`, `newGame`) och ritar om vid varje `state`-broadcast.
 
-## Grafik & gameplay-detaljer
+## Design & gameplay-detaljer
 
-- Pjäserna ritas som SVG i elfenben/ebenholts med kraftig höjdskillnad och
-  tydligt markerade hål — pjäsen i hand visar dessutom egenskaperna i text.
-- Orientalisk lack-och-guld-estetik med sigill (四 = fyra), slumpat ordspråk
-  per parti och syntetiserade ljud (träklocka vid drag, gong vid vinst).
+- Exklusivt modernt formspråk: matt nästan-svart yta, hårfina linjer och en
+  enda accent i mässing. Typografin bär rummet — Fraunces (serif) för display,
+  Inter för gränssnittet, spärrade versaler för etiketter.
+- Pjäserna ritas som SVG i champagne-metall mot grafit med kraftig
+  höjdskillnad och tydligt markerade hål — pjäsen i hand visar dessutom
+  egenskaperna i text.
+- Fast spelvy utan scroll (100dvh): egna drag renderas optimistiskt och
+  pjäserna flyger med FLIP-animation förråd → hand → bräde.
+- Slumpat ordspråk per parti, syntetiserade ljud (träklocka vid drag, gong
+  vid vinst) plus inspelade utrop i `public/sounds/`.
 - Vissa placeringar belönas slumpmässigt med ett flygande utrop ("Woah!",
   "Nämen!" …) hos båda spelarna. Drag som skapar tre i rad med gemensam
   egenskap har högre chans — men slumpen gör utropet till en opålitlig signal,
   så det avslöjar aldrig säkert något om brädet.
-- Senast placerade pjäsen markeras med guldring.
+- Senast placerade pjäsen markeras med en tunn mässingsring; vinst firas
+  med stillsamt fallande guldstoft hos vinnaren.

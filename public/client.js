@@ -34,26 +34,27 @@ function pieceSVG(id) {
   const square = id & 4;
   const hollow = id & 8;
 
+  // Champagne-metall mot grafit: maskinbearbetade objekt, inte leksaker.
   const c = dark
     ? {
         grad: 'qg-d',
-        g1: '#54281a',
-        g2: '#1f0d06',
-        top: '#6b3520',
-        stroke: '#120802',
-        hole: '#060301',
-        holeRim: 'rgba(255, 214, 140, 0.7)',
-        gloss: 'rgba(255, 235, 200, 0.28)',
+        g1: '#585862',
+        g2: '#1d1d22',
+        top: '#6a6a75',
+        stroke: '#0a0a0c',
+        hole: '#060607',
+        holeRim: 'rgba(225, 225, 240, 0.4)',
+        gloss: 'rgba(255, 255, 255, 0.16)',
       }
     : {
         grad: 'qg-l',
-        g1: '#f8ecd0',
-        g2: '#d3b27c',
-        top: '#fdf6e0',
-        stroke: '#a8803f',
-        hole: '#6e5121',
-        holeRim: 'rgba(80, 55, 15, 0.65)',
-        gloss: 'rgba(255, 255, 255, 0.55)',
+        g1: '#eedcae',
+        g2: '#a6824c',
+        top: '#f6ebc9',
+        stroke: '#6e5526',
+        hole: '#4d3a16',
+        holeRim: 'rgba(60, 44, 14, 0.6)',
+        gloss: 'rgba(255, 255, 255, 0.45)',
       };
 
   const topY = tall ? 7 : 41; // överdriven höjdskillnad gör hög/låg omisskännlig
@@ -593,10 +594,11 @@ function showTurnBanner(text) {
   turnBannerTimer = setTimeout(() => banner.classList.add('hidden'), 1600);
 }
 
-// ---------- Konfetti ----------
+// ---------- Guldstoft vid vinst: stillsamt fall, slutar av sig självt ----------
 
-let confettiActive = false;
-let confettiParticles = [];
+let dustActive = false;
+let dustParticles = [];
+let dustStarted = 0;
 const confettiCanvas = $('confetti-canvas');
 const confettiCtx = confettiCanvas ? confettiCanvas.getContext('2d') : null;
 
@@ -608,61 +610,64 @@ function resizeConfettiCanvas() {
 }
 window.addEventListener('resize', resizeConfettiCanvas);
 
-class ConfettiParticle {
+class DustParticle {
   constructor() {
     this.x = Math.random() * window.innerWidth;
-    this.y = Math.random() * -window.innerHeight - 20;
-    this.size = Math.random() * 8 + 6;
-    this.color = ['#d4af37', '#f3c63f', '#2ec4b6', '#f4ebe1', '#ff5e5b'][Math.floor(Math.random() * 5)];
-    this.speedX = Math.random() * 4 - 2;
-    this.speedY = Math.random() * 5 + 4;
-    this.rotation = Math.random() * 360;
-    this.rotationSpeed = Math.random() * 4 - 2;
+    this.y = Math.random() * -window.innerHeight * 0.6 - 10;
+    this.r = Math.random() * 1.8 + 0.8;
+    this.alpha = Math.random() * 0.5 + 0.25;
+    this.speedY = Math.random() * 1.1 + 0.6;
+    this.sway = Math.random() * 1.4 + 0.4;
+    this.phase = Math.random() * Math.PI * 2;
   }
-  update() {
-    this.x += this.speedX;
+  update(t) {
     this.y += this.speedY;
-    this.rotation += this.rotationSpeed;
-    if (this.y > window.innerHeight) {
-      this.y = -20;
-      this.x = Math.random() * window.innerWidth;
-    }
+    this.x += Math.sin(t / 900 + this.phase) * this.sway * 0.3;
   }
   draw() {
     if (!confettiCtx) return;
-    confettiCtx.save();
-    confettiCtx.translate(this.x, this.y);
-    confettiCtx.rotate((this.rotation * Math.PI) / 180);
-    confettiCtx.fillStyle = this.color;
-    confettiCtx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
-    confettiCtx.restore();
+    confettiCtx.beginPath();
+    confettiCtx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    confettiCtx.fillStyle = `rgba(224, 195, 136, ${this.alpha})`;
+    confettiCtx.fill();
   }
 }
 
 function startConfetti() {
-  if (confettiActive || REDUCED) return;
-  confettiActive = true;
+  if (dustActive || REDUCED) return;
+  dustActive = true;
+  dustStarted = performance.now();
   resizeConfettiCanvas();
-  confettiParticles = [];
-  for (let i = 0; i < 120; i++) confettiParticles.push(new ConfettiParticle());
-  animateConfetti();
+  dustParticles = [];
+  for (let i = 0; i < 90; i++) dustParticles.push(new DustParticle());
+  animateDust();
 }
 
 function stopConfetti() {
-  confettiActive = false;
+  dustActive = false;
   if (confettiCtx && confettiCanvas) {
     confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
   }
 }
 
-function animateConfetti() {
-  if (!confettiActive) return;
+function animateDust() {
+  if (!dustActive) return;
+  const t = performance.now();
   confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
-  for (const p of confettiParticles) {
-    p.update();
+  for (const p of dustParticles) {
+    p.update(t);
     p.draw();
   }
-  requestAnimationFrame(animateConfetti);
+  // Efter ett par sekunder fylls inget på: stoftet faller färdigt och tystnar.
+  if (t - dustStarted < 2600) {
+    dustParticles.forEach((p) => {
+      if (p.y > window.innerHeight) Object.assign(p, new DustParticle(), { y: -10 });
+    });
+  } else {
+    dustParticles = dustParticles.filter((p) => p.y <= window.innerHeight);
+    if (dustParticles.length === 0) return stopConfetti();
+  }
+  requestAnimationFrame(animateDust);
 }
 
 // ---------- Kudos: flygande utrop ----------
@@ -671,8 +676,8 @@ function showKudos(text) {
   const el = document.createElement('div');
   el.className = 'kudos';
   el.textContent = text;
-  el.style.setProperty('--tilt', `${(Math.random() * 16 - 8).toFixed(1)}deg`);
-  el.classList.add(['gold', 'red', 'jade'][Math.floor(Math.random() * 3)]);
+  el.style.setProperty('--tilt', `${(Math.random() * 6 - 3).toFixed(1)}deg`);
+  el.classList.add(['champagne', 'ivory', 'rose'][Math.floor(Math.random() * 3)]);
   document.body.appendChild(el);
   playKudosSound(text);
   setTimeout(() => el.remove(), 1700);
