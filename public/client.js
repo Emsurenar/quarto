@@ -276,11 +276,24 @@ function settle(svg) {
 function applyState(s) {
   if (!me || !s) return;
   $('lobby').classList.add('hidden');
-  $('game').classList.remove('hidden');
+  $('game-container').classList.remove('hidden');
   if (!domBuilt) {
     buildDom();
     domBuilt = true;
     updateBoardSize();
+  }
+
+  // Populate or update chat history if message count changes or on first load
+  const chatMsgContainer = $('chat-messages');
+  if (chatMsgContainer) {
+    const currentBubbles = chatMsgContainer.querySelectorAll('.chat-bubble').length;
+    const incomingCount = (s.messages || []).length;
+    if (!view || currentBubbles !== incomingCount) {
+      chatMsgContainer.innerHTML = '';
+      if (s.messages) {
+        s.messages.forEach((msg) => renderMessage(msg, true));
+      }
+    }
   }
 
   const g = s.game;
@@ -771,3 +784,192 @@ function showToast(msg) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => toast.classList.add('hidden'), 2500);
 }
+
+// ---------- Chatt: Rendering, Händelser och Geststyrning ----------
+
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function renderMessage(msg, append = true) {
+  const container = $('chat-messages');
+  if (!container) return;
+
+  const isMine = msg.sender === me;
+  const bubble = document.createElement('div');
+  bubble.className = `chat-bubble ${isMine ? 'mine' : 'theirs'}`;
+
+  const name = auth && auth.metadata && auth.metadata[msg.sender]
+    ? auth.metadata[msg.sender].name
+    : msg.sender;
+
+  const date = new Date(msg.timestamp);
+  const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  bubble.innerHTML = `
+    <span class="chat-msg-sender">${escapeHtml(name)}</span>
+    <span class="chat-msg-text">${escapeHtml(msg.text)}</span>
+    <span class="chat-msg-time">${timeStr}</span>
+  `;
+
+  if (append) {
+    container.appendChild(bubble);
+    container.scrollTop = container.scrollHeight;
+  } else {
+    container.insertBefore(bubble, container.firstChild);
+  }
+}
+
+function toggleChat(show) {
+  const sidebar = $('chat-sidebar');
+  const overlay = $('chat-overlay');
+  if (!sidebar || !overlay) return;
+
+  const isOpen = sidebar.classList.contains('open');
+  const shouldOpen = show !== undefined ? show : !isOpen;
+
+  sidebar.classList.toggle('open', shouldOpen);
+  overlay.classList.toggle('hidden', !shouldOpen);
+
+  // Återställ eventuell inline transform från drag
+  sidebar.style.transform = '';
+
+  if (shouldOpen) {
+    const container = $('chat-messages');
+    if (container) container.scrollTop = container.scrollHeight;
+    
+    setTimeout(() => {
+      if ($('chat-input')) $('chat-input').focus();
+    }, 100);
+  }
+}
+
+// Chatt-händelselyssnare
+socket.on('message', (msg) => {
+  renderMessage(msg, true);
+});
+
+if ($('chat-form')) {
+  $('chat-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const input = $('chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+    socket.emit('sendMessage', text);
+    input.value = '';
+    input.focus();
+  });
+}
+
+if ($('menu-chat-btn')) {
+  $('menu-chat-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    $('menu').classList.add('hidden');
+    toggleChat();
+  });
+}
+
+if ($('chat-close-btn')) {
+  $('chat-close-btn').addEventListener('click', () => {
+    toggleChat(false);
+  });
+}
+
+if ($('chat-overlay')) {
+  $('chat-overlay').addEventListener('click', () => {
+    toggleChat(false);
+  });
+}
+
+// --- Swipe- och drag-geststyrning på mobil ---
+
+let touchStartX = 0;
+let touchStartY = 0;
+let isDraggingSidebar = false;
+
+window.addEventListener('touchstart', (e) => {
+  const sidebar = $('chat-sidebar');
+  if (!sidebar) return;
+
+  const isOpen = sidebar.classList.contains('open');
+  const touch = e.touches[0];
+  touchStartX = touch.clientX;
+  touchStartY = touch.clientY;
+
+  // Om chatten är stängd, dra från högerkanten (inom 35px) för att öppna
+  if (!isOpen && touchStartX > window.innerWidth - 35) {
+    isDraggingSidebar = true;
+    sidebar.style.transition = 'none';
+  }
+  // Om chatten är öppen, dra tillbaka till höger för att stänga (om man drar i panelen eller overlay)
+  else if (isOpen) {
+    const isInsideSidebar = sidebar.contains(e.target);
+    const isOverlay = e.target === $('chat-overlay');
+    if (isInsideSidebar || isOverlay) {
+      isDraggingSidebar = true;
+      sidebar.style.transition = 'none';
+    }
+  }
+}, { passive: true });
+
+window.addEventListener('touchmove', (e) => {
+  if (!isDraggingSidebar) return;
+  const sidebar = $('chat-sidebar');
+  if (!sidebar) return;
+
+  const isOpen = sidebar.classList.contains('open');
+  const touch = e.touches[0];
+  const deltaX = touch.clientX - touchStartX;
+  const deltaY = touch.clientY - touchStartY;
+
+  // Ignorera om rörelsen främst är vertikal (t.ex. vid scroll av meddelanden)
+  if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaX) < 10) return;
+
+  if (!isOpen) {
+    // Dra ut från höger till vänster
+    if (deltaX < 0) {
+      const offset = Math.max(0, 320 + deltaX);
+      sidebar.style.transform = `translateX(${offset}px)`;
+    }
+  } else {
+    // Dra in från vänster till höger (stäng)
+    if (deltaX > 0) {
+      const offset = Math.min(320, deltaX);
+      sidebar.style.transform = `translateX(${offset}px)`;
+    }
+  }
+}, { passive: true });
+
+window.addEventListener('touchend', (e) => {
+  if (!isDraggingSidebar) return;
+  isDraggingSidebar = false;
+
+  const sidebar = $('chat-sidebar');
+  if (!sidebar) return;
+
+  sidebar.style.transition = '';
+  const isOpen = sidebar.classList.contains('open');
+  const touch = e.changedTouches[0];
+  const deltaX = touch.clientX - touchStartX;
+
+  if (!isOpen) {
+    if (deltaX < -80) {
+      toggleChat(true);
+    } else {
+      sidebar.style.transform = '';
+      toggleChat(false);
+    }
+  } else {
+    if (deltaX > 80) {
+      toggleChat(false);
+    } else {
+      sidebar.style.transform = '';
+      toggleChat(true);
+    }
+  }
+});

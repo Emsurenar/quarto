@@ -50,61 +50,81 @@
     </div>
   </section>
 
-  <!-- Spelskärm: fast yta utan scroll -->
-  <section id="game" class="app hidden">
-
-    <header class="topbar">
-      <div class="player-card" id="card-left">
-        <div class="avatar-wrap">
-          <img id="avatar-left" class="avatar" alt="" />
-          <span id="dot-left" class="status-dot"></span>
+  <!-- Spelvy wrapper för delad skärm på dator -->
+  <div id="game-container" class="game-wrapper hidden">
+    <!-- Spelskärm: fast yta utan scroll -->
+    <section id="game" class="app">
+  
+      <header class="topbar">
+        <div class="player-card" id="card-left">
+          <div class="avatar-wrap">
+            <img id="avatar-left" class="avatar" alt="" />
+            <span id="dot-left" class="status-dot"></span>
+          </div>
+          <div class="player-meta">
+            <span id="name-left" class="name"></span>
+            <span id="sub-left" class="sub"></span>
+          </div>
         </div>
-        <div class="player-meta">
-          <span id="name-left" class="name"></span>
-          <span id="sub-left" class="sub"></span>
+  
+        <div class="score-wrap"><span id="score" class="score">0 – 0</span></div>
+  
+        <div class="player-card right" id="card-right">
+          <div class="player-meta right">
+            <span id="name-right" class="name"></span>
+            <span id="sub-right" class="sub"></span>
+          </div>
+          <div class="avatar-wrap">
+            <img id="avatar-right" class="avatar" alt="" />
+            <span id="dot-right" class="status-dot"></span>
+          </div>
+        </div>
+  
+        <div class="tools">
+          <button id="menu-btn" title="Meny">⋯</button>
+          <div id="menu" class="menu hidden">
+            <button id="menu-chat-btn">💬 Chatt</button>
+            <button id="reset-scores-btn">⟲ Nollställ poäng</button>
+            <button id="switch-player">⇄ Byt spelare</button>
+          </div>
+        </div>
+      </header>
+  
+      <div id="task" class="task">
+        <div id="task-piece" class="task-piece"></div>
+        <div class="task-text">
+          <span id="task-title"></span>
+          <span id="task-sub"></span>
         </div>
       </div>
-
-      <div class="score-wrap"><span id="score" class="score">0 – 0</span></div>
-
-      <div class="player-card right" id="card-right">
-        <div class="player-meta right">
-          <span id="name-right" class="name"></span>
-          <span id="sub-right" class="sub"></span>
-        </div>
-        <div class="avatar-wrap">
-          <img id="avatar-right" class="avatar" alt="" />
-          <span id="dot-right" class="status-dot"></span>
-        </div>
+  
+      <div class="board-zone"><div id="board" class="board"></div></div>
+  
+      <div id="pool" class="pool"></div>
+  
+      <div class="bottombar">
+        <button id="quarto-btn" class="quarto-btn" disabled>Quarto!</button>
+        <button id="draw-btn" class="draw-btn hidden">Oavgjort?</button>
       </div>
+  
+    </section>
 
-      <div class="tools">
-        <button id="menu-btn" title="Meny">⋯</button>
-        <div id="menu" class="menu hidden">
-          <button id="reset-scores-btn">⟲ Nollställ poäng</button>
-          <button id="switch-player">⇄ Byt spelare</button>
-        </div>
+    <!-- Chatt-sidopanel -->
+    <aside id="chat-sidebar" class="chat-sidebar">
+      <div class="chat-header">
+        <h2 class="chat-title">Chatt</h2>
+        <button id="chat-close-btn" class="chat-close-btn" aria-label="Stäng chatt">×</button>
       </div>
-    </header>
+      <div id="chat-messages" class="chat-messages"></div>
+      <form id="chat-form" class="chat-form">
+        <input type="text" id="chat-input" placeholder="Skriv meddelande..." autocomplete="off" maxlength="200" required />
+        <button type="submit" id="chat-send-btn">Sänd</button>
+      </form>
+    </aside>
 
-    <div id="task" class="task">
-      <div id="task-piece" class="task-piece"></div>
-      <div class="task-text">
-        <span id="task-title"></span>
-        <span id="task-sub"></span>
-      </div>
-    </div>
-
-    <div class="board-zone"><div id="board" class="board"></div></div>
-
-    <div id="pool" class="pool"></div>
-
-    <div class="bottombar">
-      <button id="quarto-btn" class="quarto-btn" disabled>Quarto!</button>
-      <button id="draw-btn" class="draw-btn hidden">Oavgjort?</button>
-    </div>
-
-  </section>
+    <!-- Translucent overlay backdrop for mobile -->
+    <div id="chat-overlay" class="chat-overlay hidden"></div>
+  </div>
 
   <!-- Spelslut: overlay i stället för layoutskiftande banner -->
   <div id="gameover" class="gameover hidden">

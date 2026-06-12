@@ -19,6 +19,7 @@ match.metadata = {
   Emreos: { name: 'Emreos', avatar: 'emreos.jpg' },
   Raquel: { name: 'Raquel', avatar: 'raquel.jpg' }
 };
+match.messages = [];
 
 // Antal anslutna sockets per spelare (samma person kan ha flera flikar).
 const connections = { Emreos: 0, Raquel: 0 };
@@ -31,7 +32,7 @@ function presence() {
 let seq = 0;
 
 function fullState() {
-  return { seq, game: match.game, scores: match.scores, presence: presence(), metadata: match.metadata };
+  return { seq, game: match.game, scores: match.scores, presence: presence(), metadata: match.metadata, messages: match.messages };
 }
 
 function broadcastState() {
@@ -143,6 +144,24 @@ io.on('connection', (socket) => {
     const result = logic.resetScores(match);
     if (result.ok) broadcastState();
     else socket.emit('errorMsg', result.error);
+  });
+
+  socket.on('sendMessage', (text) => {
+    if (!player) return;
+    if (typeof text !== 'string') return;
+    const cleanText = text.trim();
+    if (!cleanText) return;
+    const msg = {
+      sender: player,
+      text: cleanText.substring(0, 200),
+      timestamp: Date.now()
+    };
+    match.messages = match.messages || [];
+    match.messages.push(msg);
+    if (match.messages.length > 50) {
+      match.messages.shift();
+    }
+    io.emit('message', msg);
   });
 
   socket.on('disconnect', () => {

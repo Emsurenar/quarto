@@ -159,7 +159,23 @@ async function main() {
   assert.strictEqual(customJoinState.metadata.Raquel.avatar, 'bob.jpg');
   ok('anpassat namn och profilbild uppdateras och synkas vid join');
 
+  // Chattfunktion: Skicka och ta emot meddelanden
+  const msgPromise = nextEvent(emre.socket, 'message');
+  rakel2.socket.emit('sendMessage', 'Hej Emreos!');
+  const msg = await msgPromise;
+  assert.strictEqual(msg.sender, 'Raquel');
+  assert.strictEqual(msg.text, 'Hej Emreos!');
+  assert.ok(typeof msg.timestamp === 'number');
+  ok('chattmeddelande skickas och tas emot av motståndaren i realtid');
+
+  // Chattfunktion: Historik synkas vid ny anslutning
   emre.socket.disconnect();
+  const emreReconnected = await connect('Emreos');
+  assert.ok(emreReconnected.state.messages.length > 0);
+  assert.strictEqual(emreReconnected.state.messages[0].text, 'Hej Emreos!');
+  ok('chattmeddelanden sparas i matchhistoriken och skickas vid återanslutning');
+
+  emreReconnected.socket.disconnect();
   rakel2.socket.disconnect();
   server.close();
   console.log(`\nsocket.test.js: ${passed} tester gröna`);
