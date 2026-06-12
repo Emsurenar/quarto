@@ -11,8 +11,8 @@
 
   <!-- Startskärm: välj identitet -->
   <section id="lobby" class="screen">
-    <h1 class="logo">Quarto <span class="seal">四</span></h1>
-    <p class="tagline">Tehuset är öppet. Vem är du?</p>
+    <h1 class="logo">Quarto <span class="seal">٤</span></h1>
+    <p class="tagline">Vem är du?</p>
     <div class="identity-buttons">
       <button class="identity" data-player="Emre">Emre</button>
       <button class="identity" data-player="Rakel">Rakel</button>
@@ -23,8 +23,11 @@
   <section id="game" class="screen hidden">
     <header>
       <div class="header-row">
-        <h1 class="logo small">Quarto <span class="seal">四</span></h1>
-        <button id="switch-player" title="Byt spelare">⇄</button>
+        <h1 class="logo small">Quarto <span class="seal">٤</span></h1>
+        <div class="header-buttons">
+          <button id="reset-scores-btn" title="Nollställ poäng">⟲</button>
+          <button id="switch-player" title="Byt spelare">⇄</button>
+        </div>
       </div>
       <div class="status-bar">
         <span id="opponent-status">
@@ -59,10 +62,10 @@
     </div>
 
     <div id="banner" class="banner hidden"></div>
-
-    <p id="proverb" class="proverb"></p>
   </section>
 
+  <div id="turn-banner" class="turn-banner hidden"></div>
+  <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
   <div id="toast" class="toast hidden"></div>
 
   <script src="/socket.io/socket.io.js"></script>

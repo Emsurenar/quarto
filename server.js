@@ -41,6 +41,7 @@ function broadcastState() {
 const KUDOS = [
   'Woah!',
   'Nämen!',
+  'Det är inte möjligt!',
   'Oj oj oj!',
   'Snyggt!',
   'Listigt …',
@@ -48,7 +49,6 @@ const KUDOS = [
   'Aj aj aj!',
   'Mästerligt!',
   'Dramatik!',
-  '哇 — woah!',
 ];
 
 function maybeKudos(player, cell) {
@@ -99,6 +99,13 @@ io.on('connection', (socket) => {
   socket.on('newGame', () => {
     if (!player) return;
     const result = logic.newGame(match);
+    if (result.ok) broadcastState();
+    else socket.emit('errorMsg', result.error);
+  });
+
+  socket.on('resetScores', () => {
+    if (!player) return;
+    const result = logic.resetScores(match);
     if (result.ok) broadcastState();
     else socket.emit('errorMsg', result.error);
   });

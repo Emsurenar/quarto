@@ -123,6 +123,38 @@ document.addEventListener('pointerdown', () => {
   if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
 });
 
+// ---------- Externa ljudfiler med fallback ----------
+
+const customAudios = {
+  woah: new Audio('/sounds/woah.wav'),
+  namen: new Audio('/sounds/namen.wav'),
+  omojligt: new Audio('/sounds/omojligt.wav')
+};
+
+function playCustomSound(key, fallbackKind) {
+  const audio = customAudios[key];
+  if (audio) {
+    audio.play().catch(() => {
+      if (fallbackKind) playSound(fallbackKind);
+    });
+  } else if (fallbackKind) {
+    playSound(fallbackKind);
+  }
+}
+
+function playKudosSound(text) {
+  const cleaned = text.trim().toLowerCase();
+  if (cleaned.includes('woah')) {
+    playCustomSound('woah', 'kudos');
+  } else if (cleaned.includes('nämen')) {
+    playCustomSound('namen', 'kudos');
+  } else if (cleaned.includes('inte möjligt') || cleaned.includes('omöjligt')) {
+    playCustomSound('omojligt', 'kudos');
+  } else {
+    playSound('kudos');
+  }
+}
+
 // ---------- Anslutning ----------
 
 function join(name) {
@@ -173,6 +205,11 @@ $('switch-player').addEventListener('click', () => {
 $('quarto-btn').addEventListener('click', () => socket.emit('claimQuarto'));
 $('draw-btn').addEventListener('click', () => socket.emit('claimDraw'));
 $('new-game-btn').addEventListener('click', () => socket.emit('newGame'));
+$('reset-scores-btn').addEventListener('click', () => {
+  if (confirm('Vill du verkligen nollställa poängställningen?')) {
+    socket.emit('resetScores');
+  }
+});
 
 // ---------- Rendering ----------
 
@@ -180,9 +217,26 @@ $('new-game-btn').addEventListener('click', () => socket.emit('newGame'));
 let prevPlaced = -1;
 let prevPool = -1;
 let prevGameOver = false;
+let prevTurn = null;
+let prevPhase = null;
 
 function opponent() {
   return me === PLAYERS[0] ? PLAYERS[1] : PLAYERS[0];
+}
+
+let turnBannerTimer = null;
+function showTurnBanner(text) {
+  const banner = $('turn-banner');
+  if (!banner) return;
+  banner.textContent = text;
+  banner.classList.remove('hidden');
+  banner.classList.remove('show');
+  void banner.offsetWidth; // trigger reflow
+  banner.classList.add('show');
+  clearTimeout(turnBannerTimer);
+  turnBannerTimer = setTimeout(() => {
+    banner.classList.add('hidden');
+  }, 2000);
 }
 
 function render() {
@@ -198,7 +252,31 @@ function render() {
   const justPlaced = prevPlaced >= 0 && placed > prevPlaced;
   if (justPlaced) playSound('place');
   else if (prevPool >= 0 && g.pool.length < prevPool && placed === prevPlaced) playSound('select');
-  if (!prevGameOver && g.gameOver && !g.draw) playSound('gong');
+  
+  if (!prevGameOver && g.gameOver && !g.draw) {
+    playSound('gong');
+    // Starta konfetti och skaka brädet vid vinst
+    startConfetti();
+    const gameScreen = $('game');
+    if (gameScreen) {
+      gameScreen.classList.remove('shake');
+      void gameScreen.offsetWidth; // reflow
+      gameScreen.classList.add('shake');
+      setTimeout(() => gameScreen.classList.remove('shake'), 600);
+    }
+  } else if (!g.gameOver) {
+    stopConfetti();
+  }
+
+  // Visa tur-banderoll om det precis blivit vår tur
+  const turnChanged = prevTurn !== g.turn || prevPhase !== g.phase;
+  if (turnChanged && myTurn) {
+    const opp = opponent();
+    const text = g.phase === 'select'
+      ? `Din tur: välj en pjäs att ge till ${opp}`
+      : 'Din tur: placera pjäsen';
+    showTurnBanner(text);
+  }
 
   renderPresence();
   $('score').textContent = `${PLAYERS[0]} ${state.scores[PLAYERS[0]]} – ${state.scores[PLAYERS[1]]} ${PLAYERS[1]}`;
@@ -209,11 +287,12 @@ function render() {
   renderPool(g, myTurn);
   renderButtons(g, myTurn);
   renderBanner(g);
-  renderProverb(g, placed);
 
   prevPlaced = placed;
   prevPool = g.pool.length;
   prevGameOver = g.gameOver;
+  prevTurn = g.turn;
+  prevPhase = g.phase;
 }
 
 function renderPresence() {
@@ -326,31 +405,79 @@ function renderBanner(g) {
   }
 }
 
-// ---------- Ordspråk: ett slumpat per parti ----------
+// ---------- Canvas-konfettieffekt ----------
 
-const PROVERBS = [
-  'Den som ger bort en hög pjäs sover sällan lugnt.',
-  'Brädet är litet – ångern är stor.',
-  'Fyra i rad gläder ögat, men bara den som ropar vinner.',
-  'En ihålig pjäs väger lätt; ett förhastat utrop väger tungt.',
-  'Den vise ser raden innan den finns.',
-  'Te först, Quarto sedan. Alltid.',
-  'Lugn som vatten, vass som en fyrkantig pjäs.',
-  'Även mästaren började med att ge bort fel pjäs.',
-  'Tystnad är guld. Quarto är jade.',
-  'Motståndarens leende säger mer än brädet.',
-];
+let confettiActive = false;
+let confettiParticles = [];
+const confettiCanvas = $('confetti-canvas');
+const confettiCtx = confettiCanvas ? confettiCanvas.getContext('2d') : null;
 
-let proverbKey = null;
-
-function renderProverb(g, placed) {
-  // Nytt ordspråk när ett nytt parti börjar (tomt bräde, full pool).
-  const key = `${g.starter}-${state.scores[PLAYERS[0]]}-${state.scores[PLAYERS[1]]}`;
-  if (key !== proverbKey) {
-    proverbKey = key;
-    $('proverb').textContent =
-      `„${PROVERBS[Math.floor(Math.random() * PROVERBS.length)]}”`;
+function resizeConfettiCanvas() {
+  if (confettiCanvas) {
+    confettiCanvas.width = window.innerWidth;
+    confettiCanvas.height = window.innerHeight;
   }
+}
+window.addEventListener('resize', resizeConfettiCanvas);
+
+class ConfettiParticle {
+  constructor() {
+    this.x = Math.random() * window.innerWidth;
+    this.y = Math.random() * -window.innerHeight - 20;
+    this.size = Math.random() * 8 + 6;
+    // Använd färgpalett från det nya temat: guld, turkos, ljussand, korall
+    this.color = ['#d4af37', '#f3c63f', '#2ec4b6', '#f4ebe1', '#ff5e5b'][Math.floor(Math.random() * 5)];
+    this.speedX = Math.random() * 4 - 2;
+    this.speedY = Math.random() * 5 + 4;
+    this.rotation = Math.random() * 360;
+    this.rotationSpeed = Math.random() * 4 - 2;
+  }
+  update() {
+    this.x += this.speedX;
+    this.y += this.speedY;
+    this.rotation += this.rotationSpeed;
+    if (this.y > window.innerHeight) {
+      this.y = -20;
+      this.x = Math.random() * window.innerWidth;
+    }
+  }
+  draw() {
+    if (!confettiCtx) return;
+    confettiCtx.save();
+    confettiCtx.translate(this.x, this.y);
+    confettiCtx.rotate((this.rotation * Math.PI) / 180);
+    confettiCtx.fillStyle = this.color;
+    confettiCtx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+    confettiCtx.restore();
+  }
+}
+
+function startConfetti() {
+  if (confettiActive) return;
+  confettiActive = true;
+  resizeConfettiCanvas();
+  confettiParticles = [];
+  for (let i = 0; i < 120; i++) {
+    confettiParticles.push(new ConfettiParticle());
+  }
+  animateConfetti();
+}
+
+function stopConfetti() {
+  confettiActive = false;
+  if (confettiCtx && confettiCanvas) {
+    confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+  }
+}
+
+function animateConfetti() {
+  if (!confettiActive) return;
+  confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+  for (let p of confettiParticles) {
+    p.update();
+    p.draw();
+  }
+  requestAnimationFrame(animateConfetti);
 }
 
 // ---------- Kudos: flygande utrop ----------
@@ -362,7 +489,7 @@ function showKudos(text) {
   el.style.setProperty('--tilt', `${(Math.random() * 16 - 8).toFixed(1)}deg`);
   el.classList.add(['gold', 'red', 'jade'][Math.floor(Math.random() * 3)]);
   document.body.appendChild(el);
-  playSound('kudos');
+  playKudosSound(text);
   setTimeout(() => el.remove(), 1700);
 }
 
@@ -371,8 +498,10 @@ function showKudos(text) {
 let toastTimer = null;
 function showToast(msg) {
   const toast = $('toast');
+  if (!toast) return;
   toast.textContent = msg;
   toast.classList.remove('hidden');
+  playCustomSound('omojligt');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => toast.classList.add('hidden'), 2500);
 }

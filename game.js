@@ -157,6 +157,14 @@ function newGame(match) {
   return { ok: true };
 }
 
+// Nollställer poängen för båda spelarna.
+function resetScores(match) {
+  for (const p of PLAYERS) {
+    match.scores[p] = 0;
+  }
+  return { ok: true };
+}
+
 module.exports = {
   PLAYERS,
   LINES,
@@ -170,4 +178,5 @@ module.exports = {
   claimQuarto,
   claimDraw,
   newGame,
+  resetScores,
 };

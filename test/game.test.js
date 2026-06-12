@@ -12,6 +12,7 @@ const {
   claimQuarto,
   claimDraw,
   newGame,
+  resetScores,
 } = require('../game');
 
 let passed = 0;
@@ -185,6 +186,15 @@ test('placementThreats räknar rader med tre pjäser och gemensam egenskap', () 
 test('otherPlayer växlar mellan de två spelarna', () => {
   assert.strictEqual(otherPlayer(PLAYERS[0]), PLAYERS[1]);
   assert.strictEqual(otherPlayer(PLAYERS[1]), PLAYERS[0]);
+});
+
+test('resetScores nollställer poängställningen', () => {
+  const m = createMatch();
+  m.scores.Emre = 5;
+  m.scores.Rakel = 3;
+  assert.ok(resetScores(m).ok);
+  assert.strictEqual(m.scores.Emre, 0);
+  assert.strictEqual(m.scores.Rakel, 0);
 });
 
 console.log(`\ngame.test.js: ${passed} tester gröna`);

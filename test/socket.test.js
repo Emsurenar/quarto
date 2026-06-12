@@ -141,6 +141,12 @@ async function main() {
   assert.strictEqual(rakel2.state.scores[starterName], 1);
   ok('omladdning ger tillbaka pågående match med poäng');
 
+  // Nollställ poängställningen via socket
+  state = await act(emre.socket, 'resetScores');
+  assert.strictEqual(state.scores.Emre, 0);
+  assert.strictEqual(state.scores.Rakel, 0);
+  ok('nollställning av poäng via socket uppdaterar båda parter');
+
   emre.socket.disconnect();
   rakel2.socket.disconnect();
   server.close();
