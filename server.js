@@ -19,10 +19,6 @@ const isTest = process.env.NODE_ENV === 'test';
 const STATE_FILE = path.join(__dirname, 'match_state.json');
 
 const match = logic.createMatch();
-match.metadata = {
-  Emreos: { name: 'Emreos', avatar: 'emreos.jpg' },
-  Raquel: { name: 'Raquel', avatar: 'raquel.jpg' }
-};
 match.messages = [];
 
 // Läs in sparat tillstånd vid serverstart (om vi inte kör tester)
@@ -31,7 +27,6 @@ if (!isTest && fs.existsSync(STATE_FILE)) {
     const data = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
     if (data.scores) match.scores = data.scores;
     if (data.game) match.game = data.game;
-    if (data.metadata) match.metadata = data.metadata;
     if (data.messages) match.messages = data.messages;
     if (data.nextStarter) match.nextStarter = data.nextStarter;
     console.log('Matchtillstånd laddat från match_state.json');
@@ -46,7 +41,6 @@ function saveState() {
     scores: match.scores,
     nextStarter: match.nextStarter,
     game: match.game,
-    metadata: match.metadata,
     messages: match.messages
   }, null, 2);
   fs.writeFile(STATE_FILE, data, 'utf8', (err) => {
@@ -65,7 +59,7 @@ function presence() {
 let seq = 0;
 
 function fullState() {
-  return { seq, game: match.game, scores: match.scores, presence: presence(), metadata: match.metadata, messages: match.messages };
+  return { seq, game: match.game, scores: match.scores, presence: presence(), messages: match.messages };
 }
 
 function broadcastState() {

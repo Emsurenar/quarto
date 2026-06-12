@@ -9,8 +9,7 @@ const socket = io();
 const PLAYERS = ['Emreos', 'Raquel'];
 const AVATARS = { Emreos: 'emreos.jpg', Raquel: 'raquel.jpg' };
 
-let me = localStorage.getItem('quartoPlayer');
-if (!PLAYERS.includes(me)) me = null;
+let me = null;
 
 let auth = null;      // senaste tillstånd från servern
 let predicted = null; // optimistiskt tillstånd efter eget drag, tills servern bekräftat
@@ -526,23 +525,12 @@ socket.on('presence', (presence) => {
 });
 
 function updateLobbyUI(s) {
-  if (!s || !s.metadata) return;
-  
-  const leftName = s.metadata.Emreos.name;
-  const leftAvatar = s.metadata.Emreos.avatar;
-  const rightName = s.metadata.Raquel.name;
-  const rightAvatar = s.metadata.Raquel.avatar;
+  if (!s || !s.presence) return;
   
   const isLeftOnline = s.presence.Emreos;
   const isRightOnline = s.presence.Raquel;
 
   // Uppdatera Plats 1 (Emreos)
-  if ($('lobby-name-left')) {
-    $('lobby-name-left').textContent = leftName;
-  }
-  if ($('lobby-avatar-left') && leftAvatar) {
-    $('lobby-avatar-left').src = leftAvatar;
-  }
   if ($('lobby-dot-left')) {
     $('lobby-dot-left').classList.toggle('online', isLeftOnline);
   }
@@ -555,12 +543,6 @@ function updateLobbyUI(s) {
   }
 
   // Uppdatera Plats 2 (Raquel)
-  if ($('lobby-name-right')) {
-    $('lobby-name-right').textContent = rightName;
-  }
-  if ($('lobby-avatar-right') && rightAvatar) {
-    $('lobby-avatar-right').src = rightAvatar;
-  }
   if ($('lobby-dot-right')) {
     $('lobby-dot-right').classList.toggle('online', isRightOnline);
   }
@@ -591,7 +573,6 @@ socket.on('kudos', ({ text }) => showKudos(text));
 document.querySelectorAll('.identity').forEach((btn) => {
   btn.addEventListener('click', () => {
     me = btn.dataset.player;
-    localStorage.setItem('quartoPlayer', me);
     join(me);
   });
 });
@@ -610,7 +591,6 @@ document.addEventListener('click', (e) => {
 });
 
 $('switch-player').addEventListener('click', () => {
-  localStorage.removeItem('quartoPlayer');
   location.reload();
 });
 
