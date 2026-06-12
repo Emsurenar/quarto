@@ -17,10 +17,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 const match = logic.createMatch();
 
 // Antal anslutna sockets per spelare (samma person kan ha flera flikar).
-const connections = { Emre: 0, Rakel: 0 };
+const connections = { Emrico: 0, Raquel: 0 };
 
 function presence() {
-  return { Emre: connections.Emre > 0, Rakel: connections.Rakel > 0 };
+  return { Emrico: connections.Emrico > 0, Raquel: connections.Raquel > 0 };
 }
 
 // Sekvensnummer så att klienter kan ignorera tillstånd som kommer i fel ordning.

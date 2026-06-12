@@ -1,7 +1,7 @@
 {
   "name": "quarto",
   "version": "1.0.0",
-  "description": "Quarto för Emre & Rakel",
+  "description": "Quarto för Emrico & Raquel",
   "main": "server.js",
   "scripts": {
     "test": "node test/game.test.js && node test/socket.test.js",

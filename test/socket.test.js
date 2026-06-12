@@ -1,5 +1,5 @@
 // Integrationstest: startar servern och låter två socket.io-klienter
-// (Emre och Rakel) spela ett helt parti. Körs med: node test/socket.test.js
+// (Emrico och Raquel) spela ett helt parti. Körs med: node test/socket.test.js
 process.env.PORT = '3199';
 const assert = require('assert');
 const { io: ioc } = require('socket.io-client');
@@ -64,21 +64,21 @@ async function main() {
     console.log(`  ✓ ${name}`);
   };
 
-  const emre = await connect('Emre');
-  assert.strictEqual(emre.state.presence.Emre, true);
-  assert.strictEqual(emre.state.presence.Rakel, false);
-  ok('Emre ansluter och ser att Rakel är offline');
+  const emre = await connect('Emrico');
+  assert.strictEqual(emre.state.presence.Emrico, true);
+  assert.strictEqual(emre.state.presence.Raquel, false);
+  ok('Emrico ansluter och ser att Raquel är offline');
 
   const presencePromise = nextEvent(emre.socket, 'presence');
-  const rakel = await connect('Rakel');
+  const rakel = await connect('Raquel');
   const p = await presencePromise;
-  assert.strictEqual(p.Rakel, true);
-  ok('Emre får presence-uppdatering direkt när Rakel ansluter');
+  assert.strictEqual(p.Raquel, true);
+  ok('Emrico får presence-uppdatering direkt när Raquel ansluter');
 
   // Vem som börjar slumpas vid serverstart – läs det ur tillståndet.
   const starterName = rakel.state.game.turn;
-  const other = starterName === 'Emre' ? 'Rakel' : 'Emre';
-  const sock = { Emre: emre.socket, Rakel: rakel.socket };
+  const other = starterName === 'Emrico' ? 'Raquel' : 'Emrico';
+  const sock = { Emrico: emre.socket, Raquel: rakel.socket };
   const starter = sock[starterName];
   const opponent = sock[other];
 
@@ -130,21 +130,21 @@ async function main() {
   assert.strictEqual(state.scores[starterName], 1);
   ok('nytt parti nollställer brädet men behåller poängen');
 
-  // Återanslutning: Rakel "laddar om sidan" och får aktuellt tillstånd.
+  // Återanslutning: Raquel "laddar om sidan" och får aktuellt tillstånd.
   rakel.socket.disconnect();
   const offline = await nextEvent(emre.socket, 'presence');
-  assert.strictEqual(offline.Rakel, false);
-  ok('Emre ser direkt att Rakel går offline');
+  assert.strictEqual(offline.Raquel, false);
+  ok('Emrico ser direkt att Raquel går offline');
 
-  const rakel2 = await connect('Rakel');
+  const rakel2 = await connect('Raquel');
   assert.strictEqual(rakel2.state.game.pool.length, 16);
   assert.strictEqual(rakel2.state.scores[starterName], 1);
   ok('omladdning ger tillbaka pågående match med poäng');
 
   // Nollställ poängställningen via socket
   state = await act(emre.socket, 'resetScores');
-  assert.strictEqual(state.scores.Emre, 0);
-  assert.strictEqual(state.scores.Rakel, 0);
+  assert.strictEqual(state.scores.Emrico, 0);
+  assert.strictEqual(state.scores.Raquel, 0);
   ok('nollställning av poäng via socket uppdaterar båda parter');
 
   emre.socket.disconnect();

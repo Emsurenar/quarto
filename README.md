@@ -1,7 +1,7 @@
-# Quarto – Emre & Rakel
+# Quarto – Emrico & Raquel
 
 Webbaserat tvåspelar-Quarto i realtid, byggt med Node.js, Express och Socket.IO.
-Exklusivt för spelarna **Emre** och **Rakel**.
+Exklusivt för spelarna **Emrico** och **Raquel**.
 
 ## Spelregler
 
@@ -30,7 +30,7 @@ men en serveromstart nollställer parti och ställning.
 
 ```bash
 npm test             # enhetstester för spellogiken + socket-integrationstest
-node test/rakel-bot.js   # bot som spelar som Rakel mot en lokal server (manuell testning)
+node test/rakel-bot.js   # bot som spelar som Raquel mot en lokal server (manuell testning)
 ```
 
 ## Deploy (Render/Railway/Fly)
@@ -54,7 +54,7 @@ eftersom spelet ligger i serverminnet nollställs ställningen vid omstart.
 | `game.js` | Ren spellogik (pjäser, turordning, vinstkontroll) — inga beroenden |
 | `server.js` | Express + Socket.IO: identitet, onlinestatus, broadcast av tillstånd |
 | `public/` | Frontend: vanilla HTML/CSS/JS, ritar allt utifrån serverns tillstånd |
-| `test/` | Enhetstester, socket-integrationstest och Rakel-bot |
+| `test/` | Enhetstester, socket-integrationstest och Raquel-bot |
 
 Pjäser kodas som heltal 0–15 där varje bit är en egenskap. Servern är
 auktoritativ: klienten skickar bara intentioner (`selectPiece`, `placePiece`,

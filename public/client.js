@@ -2,7 +2,7 @@
 
 const socket = io();
 
-const PLAYERS = ['Emre', 'Rakel'];
+const PLAYERS = ['Emrico', 'Raquel'];
 let me = localStorage.getItem('quartoPlayer');
 if (!PLAYERS.includes(me)) me = null;
 
@@ -279,7 +279,7 @@ function render() {
   }
 
   renderPresence();
-  $('score').textContent = `${PLAYERS[0]} ${state.scores[PLAYERS[0]]} – ${state.scores[PLAYERS[1]]} ${PLAYERS[1]}`;
+  $('score').textContent = `${state.scores[PLAYERS[0]]} – ${state.scores[PLAYERS[1]]}`;
 
   renderActionText(g, myTurn);
   renderBoard(g, myTurn, justPlaced);
@@ -299,8 +299,24 @@ function renderPresence() {
   if (!me || !state) return;
   const opp = opponent();
   const online = state.presence[opp];
-  $('presence-dot').className = `dot ${online ? 'online' : 'offline'}`;
-  $('presence-text').textContent = `${opp} är ${online ? 'online' : 'offline'}`;
+  
+  // Vår egen status-dot är alltid online (eftersom vi är anslutna till sidan just nu)
+  const myDot = document.querySelector(`#card-${me} .status-dot`);
+  if (myDot) myDot.className = 'status-dot dot online';
+  
+  // Motståndarens status-dot
+  const oppDot = document.querySelector(`#card-${opp} .status-dot`);
+  if (oppDot) oppDot.className = `status-dot dot ${online ? 'online' : 'offline'}`;
+  
+  // Motståndarens avatar-opacitet och grayscale
+  const oppAvatar = document.querySelector(`#card-${opp} .avatar`);
+  if (oppAvatar) {
+    if (online) {
+      oppAvatar.classList.remove('offline-avatar');
+    } else {
+      oppAvatar.classList.add('offline-avatar');
+    }
+  }
 }
 
 function renderActionText(g, myTurn) {

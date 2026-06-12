@@ -11,7 +11,7 @@
 //   phase "place":  placera den mottagna pjäsen på en ledig ruta
 // Efter en placering går turen INTE över – samma spelare väljer nästa pjäs.
 
-const PLAYERS = ['Emre', 'Rakel'];
+const PLAYERS = ['Emrico', 'Raquel'];
 
 const LINES = [];
 for (let r = 0; r < 4; r++) LINES.push([4 * r, 4 * r + 1, 4 * r + 2, 4 * r + 3]);
