@@ -779,83 +779,100 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   margin: 18px 0;
 }
 
-.profile-setup {
+.profile-card-setup {
   background: var(--surface);
   border: 1px solid var(--line-strong);
-  border-radius: 16px;
-  padding: 20px 24px;
+  border-radius: 20px;
+  padding: 20px;
   box-shadow: var(--shadow-card);
   margin-bottom: 24px;
   width: 280px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 
-.setup-fields {
+.profile-preview-wrap {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 16px;
   width: 100%;
 }
 
-.avatar-upload-wrap {
-  position: relative;
-  width: 64px;
-  height: 64px;
-  flex: 0 0 64px;
-}
-
-.avatar-label {
+.avatar-label-setup {
   display: block;
-  width: 100%;
-  height: 100%;
+  width: 68px;
+  height: 68px;
   border-radius: 50%;
-  border: 1px solid var(--line-strong);
+  border: 2px solid var(--line-strong);
   cursor: pointer;
   overflow: hidden;
   position: relative;
   background: var(--bg);
   box-shadow: inset 0 2px 4px rgba(78, 62, 36, 0.08);
+  transition: border-color 0.25s, transform 0.25s;
 }
 
-.setup-avatar-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
+.avatar-label-setup:hover {
+  border-color: var(--brass);
+  transform: scale(1.03);
 }
 
-.upload-icon {
+.avatar-edit-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(42, 39, 34, 0.4);
+  background: rgba(42, 39, 34, 0.5);
   color: #ffffff;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
-  opacity: 0;
-  transition: opacity 0.25s;
-  border-radius: 50%;
+  opacity: 0.85;
+  transition: opacity 0.25s, background-color 0.25s;
 }
 
-.avatar-label:hover .upload-icon {
+.avatar-label-setup:hover .avatar-edit-overlay {
+  background: rgba(42, 39, 34, 0.65);
   opacity: 1;
 }
 
-#custom-name-input {
+.upload-icon-setup {
+  font-size: 16px;
+  margin-bottom: 2px;
+}
+
+.upload-text-setup {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.profile-name-wrap {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.input-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ink-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+#custom-name-input {
+  width: 100%;
   font-family: inherit;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--ink);
   background: var(--bg-high);
   border: 1px solid var(--line-strong);
   border-radius: 10px;
-  padding: 11px 14px;
-  width: 100%;
+  padding: 10px 12px;
   outline: none;
   box-shadow: inset 0 1px 3px rgba(78, 62, 36, 0.05);
   transition: border-color 0.25s, box-shadow 0.25s;
@@ -864,6 +881,131 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
 #custom-name-input:focus {
   border-color: var(--brass);
   box-shadow: inset 0 1px 3px rgba(78, 62, 36, 0.05), 0 0 0 3px var(--brass-faint);
+}
+
+.lobby-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-dim);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin: 12px 0 16px 0;
+  text-align: center;
+}
+
+/* Platskort */
+.seats-container {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  max-width: 280px;
+  flex-direction: column;
+}
+
+.seat-card {
+  display: flex;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  padding: 12px 14px;
+  width: 100%;
+  cursor: pointer;
+  text-align: left;
+  gap: 12px;
+  box-shadow: var(--shadow-card);
+  transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s;
+  position: relative;
+  font-family: inherit;
+  color: inherit;
+}
+
+.seat-card:not(.occupied):hover {
+  transform: translateY(-2px);
+  border-color: var(--brass);
+  box-shadow: 0 8px 20px rgba(78, 62, 36, 0.08);
+}
+
+.seat-card.occupied {
+  cursor: not-allowed;
+  opacity: 0.7;
+  background: var(--bg-high);
+}
+
+.seat-avatar-wrap {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+}
+
+.seat-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--line-strong);
+  display: block;
+}
+
+.seat-status-dot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--surface);
+  background: var(--ink-dim);
+  transition: background-color 0.25s;
+}
+
+.seat-status-dot.online {
+  background: #55b078;
+}
+
+.seat-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.seat-label {
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--ink-dim);
+}
+
+.seat-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.seat-action-btn {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 5px 10px;
+  border-radius: 10px;
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
+  transition: background-color 0.25s, color 0.25s, border-color 0.25s;
+}
+
+.seat-card:not(.occupied):hover .seat-action-btn {
+  background: var(--brass);
+  color: #ffffff;
+  border-color: var(--brass);
+}
+
+.seat-card.occupied .seat-action-btn {
+  background: rgba(42, 39, 34, 0.05);
+  border-color: transparent;
+  color: var(--ink-dim);
 }
 
 /* ================= TILLGÄNGLIGHET & STÖRRE SKÄRMAR ================= */

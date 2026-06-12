@@ -16,35 +16,50 @@
       <div class="logo-rule"></div>
 
       <!-- Custom profile setup -->
-      <div class="profile-setup">
-        <p class="tagline">Skapa din profil</p>
-        <div class="setup-fields">
+      <div class="profile-card-setup">
+        <div class="profile-preview-wrap">
           <div class="avatar-upload-wrap">
-            <label for="custom-avatar-input" class="avatar-label" title="Välj profilbild">
-              <img id="custom-avatar-preview" src="emreos.jpg" alt="Välj bild" class="setup-avatar-img" />
-              <span class="upload-icon">📷</span>
+            <label for="custom-avatar-input" class="avatar-label-setup" title="Klicka för att välja profilbild">
+              <img id="custom-avatar-preview" src="emreos.jpg" alt="Profilbild" class="setup-avatar-img" />
+              <div class="avatar-edit-overlay">
+                <span class="upload-icon-setup">📷</span>
+                <span class="upload-text-setup">Ändra</span>
+              </div>
             </label>
             <input type="file" id="custom-avatar-input" accept="image/*" class="hidden" />
           </div>
-          <input type="text" id="custom-name-input" placeholder="Ditt namn (valfritt)" maxlength="12" />
+          <div class="profile-name-wrap">
+            <label for="custom-name-input" class="input-label">Ditt namn</label>
+            <input type="text" id="custom-name-input" placeholder="Skriv ditt namn..." maxlength="12" />
+          </div>
         </div>
       </div>
 
-      <div class="logo-rule small"></div>
-      <p class="tagline">Välj din plats</p>
+      <p class="lobby-section-title">Välj en plats att spela på</p>
 
-      <div class="identity-buttons">
-        <button class="identity" data-player="Emreos">
-          <span class="portrait-ring">
-            <img src="emreos.jpg" alt="Emreos" class="profile-img-lobby" id="lobby-avatar-left" />
-          </span>
-          <span id="lobby-name-left">Plats 1 (Emreos)</span>
+      <div class="seats-container">
+        <button class="seat-card identity" data-player="Emreos" id="seat-1">
+          <div class="seat-avatar-wrap">
+            <img src="emreos.jpg" alt="Emreos" class="seat-avatar-img" id="lobby-avatar-left" />
+            <span class="seat-status-dot" id="lobby-dot-left"></span>
+          </div>
+          <div class="seat-info">
+            <span class="seat-label">Plats 1</span>
+            <span class="seat-name" id="lobby-name-left">Emreos</span>
+          </div>
+          <span class="seat-action-btn" id="lobby-action-left">Välj</span>
         </button>
-        <button class="identity" data-player="Raquel">
-          <span class="portrait-ring">
-            <img src="raquel.jpg" alt="Raquel" class="profile-img-lobby" id="lobby-avatar-right" />
-          </span>
-          <span id="lobby-name-right">Plats 2 (Raquel)</span>
+
+        <button class="seat-card identity" data-player="Raquel" id="seat-2">
+          <div class="seat-avatar-wrap">
+            <img src="raquel.jpg" alt="Raquel" class="seat-avatar-img" id="lobby-avatar-right" />
+            <span class="seat-status-dot" id="lobby-dot-right"></span>
+          </div>
+          <div class="seat-info">
+            <span class="seat-label">Plats 2</span>
+            <span class="seat-name" id="lobby-name-right">Raquel</span>
+          </div>
+          <span class="seat-action-btn" id="lobby-action-right">Välj</span>
         </button>
       </div>
     </div>

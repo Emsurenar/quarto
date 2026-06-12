@@ -535,20 +535,43 @@ function updateLobbyUI(s) {
   const rightName = s.metadata.Raquel.name;
   const rightAvatar = s.metadata.Raquel.avatar;
   
+  const isLeftOnline = s.presence.Emreos;
+  const isRightOnline = s.presence.Raquel;
+
+  // Uppdatera Plats 1 (Emreos)
   if ($('lobby-name-left')) {
-    const isOnline = s.presence.Emreos;
-    $('lobby-name-left').textContent = leftName + (isOnline ? ' (Upptagen)' : ' (Välj)');
+    $('lobby-name-left').textContent = leftName;
   }
   if ($('lobby-avatar-left') && leftAvatar) {
     $('lobby-avatar-left').src = leftAvatar;
   }
-  
+  if ($('lobby-dot-left')) {
+    $('lobby-dot-left').classList.toggle('online', isLeftOnline);
+  }
+  if ($('lobby-action-left')) {
+    $('lobby-action-left').textContent = isLeftOnline ? 'Upptagen' : 'Välj';
+  }
+  if ($('seat-1')) {
+    $('seat-1').classList.toggle('occupied', isLeftOnline);
+    $('seat-1').disabled = isLeftOnline;
+  }
+
+  // Uppdatera Plats 2 (Raquel)
   if ($('lobby-name-right')) {
-    const isOnline = s.presence.Raquel;
-    $('lobby-name-right').textContent = rightName + (isOnline ? ' (Upptagen)' : ' (Välj)');
+    $('lobby-name-right').textContent = rightName;
   }
   if ($('lobby-avatar-right') && rightAvatar) {
     $('lobby-avatar-right').src = rightAvatar;
+  }
+  if ($('lobby-dot-right')) {
+    $('lobby-dot-right').classList.toggle('online', isRightOnline);
+  }
+  if ($('lobby-action-right')) {
+    $('lobby-action-right').textContent = isRightOnline ? 'Upptagen' : 'Välj';
+  }
+  if ($('seat-2')) {
+    $('seat-2').classList.toggle('occupied', isRightOnline);
+    $('seat-2').disabled = isRightOnline;
   }
 }
 
