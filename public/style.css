@@ -207,16 +207,13 @@ body {
 }
 
 .cell {
+  position: relative;
   aspect-ratio: 1;
   /* Platta lyxiga träplattor utan cirkulära recess-skuggor */
   background: var(--cell-wood);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 12px;
-  padding: 5%;
   cursor: default;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
   box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.25), inset 0 2px 2px rgba(255, 255, 255, 0.1);
   transition: background 0.2s, transform 0.1s;
 }
@@ -237,7 +234,9 @@ body {
   transform: scale(1.02);
 }
 
-.cell.placeable:active { background: radial-gradient(circle at 50% 44%, #182538 33%, var(--cell-alt) 40%); }
+.cell.placeable:active {
+  background: #613e25;
+}
 
 @keyframes breathe {
   0%, 100% { outline-color: rgba(212, 175, 55, 0.35); }
@@ -269,7 +268,16 @@ body {
   50% { box-shadow: inset 0 0 22px rgba(46, 196, 182, 0.85); }
 }
 
-.cell svg { width: 80%; height: 94%; display: block; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4)); }
+.cell svg {
+  position: absolute;
+  bottom: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 75%;
+  height: 85%;
+  display: block;
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
+}
 
 /* ----- Pjäs i hand ----- */
 
