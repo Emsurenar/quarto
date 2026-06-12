@@ -1,13 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Outfit:wght@300;400;600&display=swap');
 
 :root {
-  --bg: #f7f4eb;
-  --ink: #1a2639;
-  --ink-soft: #5c6b80;
+  --bg: #070b19;
+  --ink: #f4ebe1;
+  --ink-soft: #a0aab8;
   --lapis: #14213d;
   --lapis-deep: #0b132b;
   --gold: #d4af37;
-  --gold-soft: #e5c158;
+  --gold-soft: #f3c63f;
   --turquoise: #2ec4b6;
   --sand: #eae0d5;
   --sand-dark: #c6ac8f;
@@ -18,8 +18,8 @@
   --cell-wood: #86593b;
   --cell-wood-alt: #754c30;
   
-  --card: rgba(255, 255, 255, 0.88);
-  --card-border: rgba(212, 175, 55, 0.4);
+  --card: rgba(20, 33, 61, 0.75);
+  --card-border: rgba(212, 175, 55, 0.3);
   --accent: #2ec4b6;
 }
 
@@ -29,10 +29,11 @@ html, body { height: 100%; }
 
 body {
   font-family: 'Outfit', sans-serif;
-  background-color: #f7f4eb;
-  /* Ottomanskt kakelmönster (Iznik) */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' fill='%23fdfbf7'/%3E%3Crect width='80' height='80' fill='none' stroke='%23e2decb' stroke-width='1.5'/%3E%3Cpath d='M 0,0 L 12,0 C 12,6 6,12 0,12 Z' fill='%23003049'/%3E%3Cpath d='M 80,0 L 68,0 C 68,6 74,12 80,12 Z' fill='%23003049'/%3E%3Cpath d='M 0,80 L 12,80 C 12,74 6,68 0,68 Z' fill='%23003049'/%3E%3Cpath d='M 80,80 L 68,80 C 68,74 74,68 80,68 Z' fill='%23003049'/%3E%3Cpath d='M 40,22 L 45,35 L 58,40 L 45,45 L 40,58 L 35,45 L 22,40 L 35,35 Z' fill='%232ec4b6'/%3E%3Cpath d='M 40,28 L 43,37 L 52,40 L 43,43 L 40,52 L 37,43 L 28,40 L 37,37 Z' fill='%23d62828'/%3E%3Ccircle cx='40' cy='40' r='5' fill='%23e5c158'/%3E%3Cpath d='M 28,28 C 34,30 38,34 40,40 C 34,38 30,34 28,28 Z' fill='%23003049'/%3E%3Cpath d='M 52,28 C 46,30 42,34 40,40 C 46,38 50,34 52,28 Z' fill='%23003049'/%3E%3Cpath d='M 28,52 C 34,50 38,46 40,40 C 34,42 30,46 28,52 Z' fill='%23003049'/%3E%3Cpath d='M 52,52 C 46,50 42,46 40,40 C 46,42 50,46 52,52 Z' fill='%23003049'/%3E%3C/svg%3E");
-  background-size: 80px 80px;
+  background-color: var(--bg);
+  /* Repeterande kakelnät av användarens bild */
+  background-image: url('bg-tile.jpg');
+  background-repeat: repeat;
+  background-size: 220px 220px;
   color: var(--ink);
   display: flex;
   justify-content: center;
@@ -57,8 +58,8 @@ body {
   font-size: 50px;
   font-weight: 700;
   letter-spacing: 4px;
-  color: var(--lapis-deep);
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+  color: var(--gold-soft);
+  text-shadow: 0 3px 6px rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   gap: 14px;
@@ -185,7 +186,7 @@ body {
   color: var(--ink-soft);
 }
 
-.action-text.mine { color: var(--lapis); font-weight: bold; }
+.action-text.mine { color: var(--gold-soft); font-weight: bold; }
 
 /* ----- Bräde: exotiskt trä med guldram ----- */
 
@@ -303,7 +304,7 @@ body {
 .hand-name {
   font-size: 15px;
   font-weight: bold;
-  color: var(--board-wood);
+  color: var(--gold-soft);
   letter-spacing: 0.5px;
 }
 
@@ -315,7 +316,7 @@ body {
   font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 2px;
-  color: var(--lapis-deep);
+  color: var(--gold-soft);
   margin-bottom: 6px;
   text-align: center;
   font-family: 'Cinzel', serif;
@@ -620,7 +621,7 @@ body {
 .players-display .score {
   font-size: 20px;
   font-weight: 700;
-  color: var(--gold);
+  color: var(--gold-soft);
   font-family: 'Cinzel', serif;
   letter-spacing: 1px;
 }

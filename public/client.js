@@ -2,7 +2,7 @@
 
 const socket = io();
 
-const PLAYERS = ['Emrico', 'Raquel'];
+const PLAYERS = ['Emreos', 'Raquel'];
 let me = localStorage.getItem('quartoPlayer');
 if (!PLAYERS.includes(me)) me = null;
 

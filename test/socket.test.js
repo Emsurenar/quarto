@@ -1,5 +1,5 @@
 // Integrationstest: startar servern och låter två socket.io-klienter
-// (Emrico och Raquel) spela ett helt parti. Körs med: node test/socket.test.js
+// (Emreos och Raquel) spela ett helt parti. Körs med: node test/socket.test.js
 process.env.PORT = '3199';
 const assert = require('assert');
 const { io: ioc } = require('socket.io-client');
@@ -64,21 +64,21 @@ async function main() {
     console.log(`  ✓ ${name}`);
   };
 
-  const emre = await connect('Emrico');
-  assert.strictEqual(emre.state.presence.Emrico, true);
+  const emre = await connect('Emreos');
+  assert.strictEqual(emre.state.presence.Emreos, true);
   assert.strictEqual(emre.state.presence.Raquel, false);
-  ok('Emrico ansluter och ser att Raquel är offline');
+  ok('Emreos ansluter och ser att Raquel är offline');
 
   const presencePromise = nextEvent(emre.socket, 'presence');
   const rakel = await connect('Raquel');
   const p = await presencePromise;
   assert.strictEqual(p.Raquel, true);
-  ok('Emrico får presence-uppdatering direkt när Raquel ansluter');
+  ok('Emreos får presence-uppdatering direkt när Raquel ansluter');
 
   // Vem som börjar slumpas vid serverstart – läs det ur tillståndet.
   const starterName = rakel.state.game.turn;
-  const other = starterName === 'Emrico' ? 'Raquel' : 'Emrico';
-  const sock = { Emrico: emre.socket, Raquel: rakel.socket };
+  const other = starterName === 'Emreos' ? 'Raquel' : 'Emreos';
+  const sock = { Emreos: emre.socket, Raquel: rakel.socket };
   const starter = sock[starterName];
   const opponent = sock[other];
 
@@ -134,7 +134,7 @@ async function main() {
   rakel.socket.disconnect();
   const offline = await nextEvent(emre.socket, 'presence');
   assert.strictEqual(offline.Raquel, false);
-  ok('Emrico ser direkt att Raquel går offline');
+  ok('Emreos ser direkt att Raquel går offline');
 
   const rakel2 = await connect('Raquel');
   assert.strictEqual(rakel2.state.game.pool.length, 16);
@@ -143,7 +143,7 @@ async function main() {
 
   // Nollställ poängställningen via socket
   state = await act(emre.socket, 'resetScores');
-  assert.strictEqual(state.scores.Emrico, 0);
+  assert.strictEqual(state.scores.Emreos, 0);
   assert.strictEqual(state.scores.Raquel, 0);
   ok('nollställning av poäng via socket uppdaterar båda parter');
 

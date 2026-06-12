@@ -59,91 +59,91 @@ test('ingen vinstrad när egenskaperna spretar', () => {
 });
 
 test('turflöde: välj → motståndaren placerar → samma spelare väljer igen', () => {
-  const m = matchWithStarter('Emrico');
+  const m = matchWithStarter('Emreos');
   assert.strictEqual(m.game.phase, 'select');
-  assert.ok(selectPiece(m, 'Emrico', 5).ok);
+  assert.ok(selectPiece(m, 'Emreos', 5).ok);
   assert.strictEqual(m.game.turn, 'Raquel');
   assert.strictEqual(m.game.phase, 'place');
   assert.strictEqual(m.game.selectedPiece, 5);
   assert.ok(placePiece(m, 'Raquel', 0).ok);
   assert.strictEqual(m.game.board[0], 5);
-  assert.strictEqual(m.game.turn, 'Raquel'); // Raquel väljer nu pjäs åt Emrico
+  assert.strictEqual(m.game.turn, 'Raquel'); // Raquel väljer nu pjäs åt Emreos
   assert.strictEqual(m.game.phase, 'select');
   assert.ok(!m.game.pool.includes(5));
 });
 
 test('regelbrott avvisas: fel tur, fel fas, upptagen ruta, tagen pjäs', () => {
-  const m = matchWithStarter('Emrico');
+  const m = matchWithStarter('Emreos');
   assert.ok(!selectPiece(m, 'Raquel', 3).ok); // inte Raquels tur
-  assert.ok(!placePiece(m, 'Emrico', 0).ok); // fel fas
-  selectPiece(m, 'Emrico', 3);
+  assert.ok(!placePiece(m, 'Emreos', 0).ok); // fel fas
+  selectPiece(m, 'Emreos', 3);
   assert.ok(!selectPiece(m, 'Raquel', 3).ok); // fel fas (ska placera)
   placePiece(m, 'Raquel', 7);
   selectPiece(m, 'Raquel', 4);
-  assert.ok(!placePiece(m, 'Emrico', 7).ok); // upptagen ruta
-  assert.ok(!selectPiece(m, 'Emrico', 3).ok); // pjäs 3 redan tagen (och fel fas)
+  assert.ok(!placePiece(m, 'Emreos', 7).ok); // upptagen ruta
+  assert.ok(!selectPiece(m, 'Emreos', 3).ok); // pjäs 3 redan tagen (och fel fas)
 });
 
 test('korrekt Quarto-utrop ger vinst och poäng', () => {
-  const m = matchWithStarter('Emrico');
+  const m = matchWithStarter('Emreos');
   // Bygg rad 0 med fyra mörka pjäser: 1, 3, 5, 7
-  selectPiece(m, 'Emrico', 1); placePiece(m, 'Raquel', 0);
-  selectPiece(m, 'Raquel', 3); placePiece(m, 'Emrico', 1);
-  selectPiece(m, 'Emrico', 5); placePiece(m, 'Raquel', 2);
-  selectPiece(m, 'Raquel', 7); placePiece(m, 'Emrico', 3);
-  assert.ok(claimQuarto(m, 'Emrico').ok);
-  assert.strictEqual(m.game.winner, 'Emrico');
+  selectPiece(m, 'Emreos', 1); placePiece(m, 'Raquel', 0);
+  selectPiece(m, 'Raquel', 3); placePiece(m, 'Emreos', 1);
+  selectPiece(m, 'Emreos', 5); placePiece(m, 'Raquel', 2);
+  selectPiece(m, 'Raquel', 7); placePiece(m, 'Emreos', 3);
+  assert.ok(claimQuarto(m, 'Emreos').ok);
+  assert.strictEqual(m.game.winner, 'Emreos');
   assert.strictEqual(m.game.endReason, 'quarto');
   assert.deepStrictEqual(m.game.winningLine, [0, 1, 2, 3]);
-  assert.strictEqual(m.scores.Emrico, 1);
+  assert.strictEqual(m.scores.Emreos, 1);
   assert.strictEqual(m.scores.Raquel, 0);
 });
 
 test('falskt Quarto-utrop ger motståndaren vinsten', () => {
-  const m = matchWithStarter('Emrico');
-  selectPiece(m, 'Emrico', 0); placePiece(m, 'Raquel', 0);
+  const m = matchWithStarter('Emreos');
+  selectPiece(m, 'Emreos', 0); placePiece(m, 'Raquel', 0);
   assert.ok(claimQuarto(m, 'Raquel').ok);
-  assert.strictEqual(m.game.winner, 'Emrico');
+  assert.strictEqual(m.game.winner, 'Emreos');
   assert.strictEqual(m.game.endReason, 'falseClaim');
-  assert.strictEqual(m.scores.Emrico, 1);
+  assert.strictEqual(m.scores.Emreos, 1);
 });
 
 test('endast spelaren i tur kan ropa Quarto', () => {
-  const m = matchWithStarter('Emrico');
+  const m = matchWithStarter('Emreos');
   assert.ok(!claimQuarto(m, 'Raquel').ok);
 });
 
 test('oavgjort kräver fullt bräde', () => {
-  const m = matchWithStarter('Emrico');
-  assert.ok(!claimDraw(m, 'Emrico').ok);
+  const m = matchWithStarter('Emreos');
+  assert.ok(!claimDraw(m, 'Emreos').ok);
 });
 
 test('oavgjort på fullt bräde avslutar utan poäng', () => {
-  const m = matchWithStarter('Emrico');
+  const m = matchWithStarter('Emreos');
   m.game.board = Array.from({ length: 16 }, (_, i) => i);
   m.game.pool = [];
-  assert.ok(claimDraw(m, 'Emrico').ok);
+  assert.ok(claimDraw(m, 'Emreos').ok);
   assert.strictEqual(m.game.draw, true);
   assert.strictEqual(m.game.winner, null);
-  assert.strictEqual(m.scores.Emrico + m.scores.Raquel, 0);
+  assert.strictEqual(m.scores.Emreos + m.scores.Raquel, 0);
 });
 
 test('nytt parti: startspelaren alternerar och brädet nollställs', () => {
-  const m = matchWithStarter('Emrico');
+  const m = matchWithStarter('Emreos');
   assert.ok(!newGame(m).ok); // pågående parti kan inte startas om
-  selectPiece(m, 'Emrico', 0); placePiece(m, 'Raquel', 0);
+  selectPiece(m, 'Emreos', 0); placePiece(m, 'Raquel', 0);
   claimQuarto(m, 'Raquel'); // falskt utrop, partiet slut
   assert.ok(newGame(m).ok);
   assert.strictEqual(m.game.starter, 'Raquel');
   assert.strictEqual(m.game.gameOver, false);
   assert.strictEqual(m.game.pool.length, 16);
   assert.ok(m.game.board.every((c) => c === null));
-  assert.strictEqual(m.scores.Emrico, 1); // poängen ligger kvar
+  assert.strictEqual(m.scores.Emreos, 1); // poängen ligger kvar
 });
 
 test('inga drag accepteras efter spelets slut', () => {
-  const m = matchWithStarter('Emrico');
-  selectPiece(m, 'Emrico', 0); placePiece(m, 'Raquel', 0);
+  const m = matchWithStarter('Emreos');
+  selectPiece(m, 'Emreos', 0); placePiece(m, 'Raquel', 0);
   claimQuarto(m, 'Raquel');
   assert.ok(!selectPiece(m, 'Raquel', 1).ok);
   assert.ok(!placePiece(m, 'Raquel', 1).ok);
@@ -151,9 +151,9 @@ test('inga drag accepteras efter spelets slut', () => {
 });
 
 test('lastMove pekar på senast placerade rutan', () => {
-  const m = matchWithStarter('Emrico');
+  const m = matchWithStarter('Emreos');
   assert.strictEqual(m.game.lastMove, null);
-  selectPiece(m, 'Emrico', 4);
+  selectPiece(m, 'Emreos', 4);
   placePiece(m, 'Raquel', 9);
   assert.strictEqual(m.game.lastMove, 9);
 });
@@ -190,10 +190,10 @@ test('otherPlayer växlar mellan de två spelarna', () => {
 
 test('resetScores nollställer poängställningen', () => {
   const m = createMatch();
-  m.scores.Emrico = 5;
+  m.scores.Emreos = 5;
   m.scores.Raquel = 3;
   assert.ok(resetScores(m).ok);
-  assert.strictEqual(m.scores.Emrico, 0);
+  assert.strictEqual(m.scores.Emreos, 0);
   assert.strictEqual(m.scores.Raquel, 0);
 });
 

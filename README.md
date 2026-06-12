@@ -1,7 +1,7 @@
-# Quarto – Emrico & Raquel
+# Quarto – Emreos & Raquel
 
 Webbaserat tvåspelar-Quarto i realtid, byggt med Node.js, Express och Socket.IO.
-Exklusivt för spelarna **Emrico** och **Raquel**.
+Exklusivt för spelarna **Emreos** och **Raquel**.
 
 ## Spelregler
 
