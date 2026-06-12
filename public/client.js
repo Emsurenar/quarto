@@ -348,13 +348,19 @@ function applyState(s) {
 function renderHeader(s, g) {
   const opp = opponent();
   const left = $('avatar-left');
-  if (!left.getAttribute('src')) {
-    left.src = AVATARS[me];
-    $('avatar-right').src = AVATARS[opp];
-    $('name-left').textContent = me;
-    $('name-right').textContent = opp;
-    $('sub-left').textContent = 'du';
-  }
+  const right = $('avatar-right');
+
+  const myMeta = s.metadata ? s.metadata[me] : { name: me, avatar: AVATARS[me] };
+  const oppMeta = s.metadata ? s.metadata[opp] : { name: opp, avatar: AVATARS[opp] };
+
+  if (left.getAttribute('src') !== myMeta.avatar) left.src = myMeta.avatar;
+  if (right.getAttribute('src') !== oppMeta.avatar) right.src = oppMeta.avatar;
+
+  if ($('name-left').textContent !== myMeta.name) $('name-left').textContent = myMeta.name;
+  if ($('name-right').textContent !== oppMeta.name) $('name-right').textContent = oppMeta.name;
+
+  $('sub-left').textContent = 'du';
+
   $('score').textContent = `${s.scores[me]} – ${s.scores[opp]}`;
   const online = s.presence[opp];
   $('sub-right').textContent = online ? 'online' : 'offline';
@@ -434,19 +440,6 @@ function renderButtons(g) {
   $('draw-btn').classList.toggle('hidden', !(myTurn && full));
 }
 
-const PROVERBS = [
-  'Den som ger bort en hög pjäs sover sällan lugnt.',
-  'Brädet är litet — ångern är stor.',
-  'Fyra i rad gläder ögat, men bara den som ropar vinner.',
-  'En ihålig pjäs väger lätt; ett förhastat utrop väger tungt.',
-  'Den vise ser raden innan den finns.',
-  'Te först, Quarto sedan. Alltid.',
-  'Lugn som vatten, vass som en fyrkantig pjäs.',
-  'Även mästaren började med att ge bort fel pjäs.',
-  'Tystnad är guld. Quarto är jade.',
-  'Motståndarens leende säger mer än brädet.',
-];
-
 function renderGameOver(g) {
   const ov = $('gameover');
   if (!g.gameOver) {
@@ -473,9 +466,6 @@ function renderGameOver(g) {
   }
   $('gameover-title').textContent = title;
   $('gameover-sub').textContent = sub;
-  if (wasHidden) {
-    $('gameover-proverb').textContent = `„${PROVERBS[Math.floor(Math.random() * PROVERBS.length)]}”`;
-  }
 }
 
 function shakeBoard() {
@@ -489,8 +479,10 @@ function shakeBoard() {
 
 // ---------- Anslutning ----------
 
-function join(name) {
-  socket.emit('join', name, (res) => {
+function join(seat) {
+  const customName = localStorage.getItem('quartoCustomName') || '';
+  const customAvatar = localStorage.getItem('quartoCustomAvatar') || '';
+  socket.emit('join', seat, customName, customAvatar, (res) => {
     if (!res.ok) return showToast(res.error);
     lastSeq = res.state.seq;
     auth = res.state;
@@ -504,6 +496,7 @@ socket.on('connect', () => {
 });
 
 socket.on('state', (data) => {
+  updateLobbyUI(data);
   if (data.seq <= lastSeq) return;
   lastSeq = data.seq;
   auth = data;
@@ -512,11 +505,39 @@ socket.on('state', (data) => {
 });
 
 socket.on('presence', (presence) => {
-  if (auth) auth.presence = presence;
+  if (auth) {
+    auth.presence = presence;
+    updateLobbyUI(auth);
+  }
   if (predicted) predicted.presence = presence;
   const s = effective();
   if (s && view) renderHeader(s, s.game);
 });
+
+function updateLobbyUI(s) {
+  if (!s || !s.metadata) return;
+  
+  const leftName = s.metadata.Emreos.name;
+  const leftAvatar = s.metadata.Emreos.avatar;
+  const rightName = s.metadata.Raquel.name;
+  const rightAvatar = s.metadata.Raquel.avatar;
+  
+  if ($('lobby-name-left')) {
+    const isOnline = s.presence.Emreos;
+    $('lobby-name-left').textContent = leftName + (isOnline ? ' (Upptagen)' : ' (Välj)');
+  }
+  if ($('lobby-avatar-left') && leftAvatar) {
+    $('lobby-avatar-left').src = leftAvatar;
+  }
+  
+  if ($('lobby-name-right')) {
+    const isOnline = s.presence.Raquel;
+    $('lobby-name-right').textContent = rightName + (isOnline ? ' (Upptagen)' : ' (Välj)');
+  }
+  if ($('lobby-avatar-right') && rightAvatar) {
+    $('lobby-avatar-right').src = rightAvatar;
+  }
+}
 
 socket.on('errorMsg', (msg) => {
   showToast(msg);
@@ -530,6 +551,49 @@ socket.on('errorMsg', (msg) => {
 socket.on('kudos', ({ text }) => showKudos(text));
 
 // ---------- Lobby & meny ----------
+
+// Initialize custom profile from localStorage
+let customName = localStorage.getItem('quartoCustomName') || '';
+let customAvatar = localStorage.getItem('quartoCustomAvatar') || '';
+
+if ($('custom-name-input')) {
+  $('custom-name-input').value = customName;
+  $('custom-name-input').addEventListener('input', (e) => {
+    customName = e.target.value;
+    localStorage.setItem('quartoCustomName', customName);
+  });
+}
+
+if ($('custom-avatar-preview') && customAvatar) {
+  $('custom-avatar-preview').src = customAvatar;
+}
+
+if ($('custom-avatar-input')) {
+  $('custom-avatar-input').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 128;
+        canvas.height = 128;
+        const ctx = canvas.getContext('2d');
+        const size = Math.min(img.width, img.height);
+        const sx = (img.width - size) / 2;
+        const sy = (img.height - size) / 2;
+        ctx.drawImage(img, sx, sy, size, size, 0, 0, 128, 128);
+        
+        customAvatar = canvas.toDataURL('image/jpeg', 0.75);
+        localStorage.setItem('quartoCustomAvatar', customAvatar);
+        $('custom-avatar-preview').src = customAvatar;
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
 
 document.querySelectorAll('.identity').forEach((btn) => {
   btn.addEventListener('click', () => {

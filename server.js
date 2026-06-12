@@ -15,6 +15,10 @@ const io = new Server(server);
 app.use(express.static(path.join(__dirname, 'public')));
 
 const match = logic.createMatch();
+match.metadata = {
+  Emreos: { name: 'Emreos', avatar: 'emreos.jpg' },
+  Raquel: { name: 'Raquel', avatar: 'raquel.jpg' }
+};
 
 // Antal anslutna sockets per spelare (samma person kan ha flera flikar).
 const connections = { Emreos: 0, Raquel: 0 };
@@ -27,7 +31,7 @@ function presence() {
 let seq = 0;
 
 function fullState() {
-  return { seq, game: match.game, scores: match.scores, presence: presence() };
+  return { seq, game: match.game, scores: match.scores, presence: presence(), metadata: match.metadata };
 }
 
 function broadcastState() {
@@ -63,15 +67,46 @@ function maybeKudos(player, cell) {
 io.on('connection', (socket) => {
   let player = null;
 
-  socket.on('join', (name, ack) => {
-    if (!logic.PLAYERS.includes(name)) {
+  // Skicka aktuellt tillstånd direkt vid anslutning
+  socket.emit('state', fullState());
+
+  socket.on('join', (...args) => {
+    const seat = args[0];
+    let customName = null;
+    let customAvatar = null;
+    let ack = null;
+
+    if (typeof args[args.length - 1] === 'function') {
+      ack = args[args.length - 1];
+    }
+    if (args.length > 2 && typeof args[1] === 'string') {
+      customName = args[1];
+    }
+    if (args.length > 3 && typeof args[2] === 'string') {
+      customAvatar = args[2];
+    }
+
+    if (!logic.PLAYERS.includes(seat)) {
       if (typeof ack === 'function') ack({ ok: false, error: 'Okänd spelare.' });
       return;
     }
     if (player) connections[player] -= 1; // byter identitet i samma socket
-    player = name;
+    player = seat;
     connections[player] += 1;
+
+    if (customName && customName.trim()) {
+      match.metadata[seat].name = customName.trim();
+    } else {
+      match.metadata[seat].name = seat;
+    }
+    if (customAvatar) {
+      match.metadata[seat].avatar = customAvatar;
+    } else {
+      match.metadata[seat].avatar = seat === 'Emreos' ? 'emreos.jpg' : 'raquel.jpg';
+    }
+
     io.emit('presence', presence());
+    broadcastState();
     if (typeof ack === 'function') ack({ ok: true, state: fullState() });
   });
 
@@ -114,6 +149,7 @@ io.on('connection', (socket) => {
     if (!player) return;
     connections[player] -= 1;
     io.emit('presence', presence());
+    broadcastState();
   });
 });
 

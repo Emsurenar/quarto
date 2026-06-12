@@ -14,19 +14,37 @@
     <div class="lobby-inner">
       <h1 class="logo">Quarto<span class="dot">.</span></h1>
       <div class="logo-rule"></div>
-      <p class="tagline">Vem är du?</p>
+
+      <!-- Custom profile setup -->
+      <div class="profile-setup">
+        <p class="tagline">Skapa din profil</p>
+        <div class="setup-fields">
+          <div class="avatar-upload-wrap">
+            <label for="custom-avatar-input" class="avatar-label" title="Välj profilbild">
+              <img id="custom-avatar-preview" src="emreos.jpg" alt="Välj bild" class="setup-avatar-img" />
+              <span class="upload-icon">📷</span>
+            </label>
+            <input type="file" id="custom-avatar-input" accept="image/*" class="hidden" />
+          </div>
+          <input type="text" id="custom-name-input" placeholder="Ditt namn (valfritt)" maxlength="12" />
+        </div>
+      </div>
+
+      <div class="logo-rule small"></div>
+      <p class="tagline">Välj din plats</p>
+
       <div class="identity-buttons">
         <button class="identity" data-player="Emreos">
           <span class="portrait-ring">
-            <img src="emreos.jpg" alt="Emreos" class="profile-img-lobby" />
+            <img src="emreos.jpg" alt="Emreos" class="profile-img-lobby" id="lobby-avatar-left" />
           </span>
-          <span>Emreos</span>
+          <span id="lobby-name-left">Plats 1 (Emreos)</span>
         </button>
         <button class="identity" data-player="Raquel">
           <span class="portrait-ring">
-            <img src="raquel.jpg" alt="Raquel" class="profile-img-lobby" />
+            <img src="raquel.jpg" alt="Raquel" class="profile-img-lobby" id="lobby-avatar-right" />
           </span>
-          <span>Raquel</span>
+          <span id="lobby-name-right">Plats 2 (Raquel)</span>
         </button>
       </div>
     </div>
@@ -93,8 +111,6 @@
     <div class="gameover-card">
       <p id="gameover-title"></p>
       <p id="gameover-sub"></p>
-      <div class="gameover-rule"></div>
-      <p id="gameover-proverb" class="proverb"></p>
       <button id="new-game-btn" class="new-game-btn">Nytt parti</button>
     </div>
   </div>
