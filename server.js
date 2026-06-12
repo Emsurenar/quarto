@@ -15,6 +15,9 @@ const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Regelmotorn delas med webbläsaren så att botläget kan köras helt lokalt.
+app.get('/game.js', (_req, res) => res.sendFile(path.join(__dirname, 'game.js')));
+
 const isTest = process.env.NODE_ENV === 'test';
 const STATE_FILE = path.join(__dirname, 'match_state.json');
 

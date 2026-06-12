@@ -4,7 +4,7 @@
   "description": "Quarto för Emreos & Raquel",
   "main": "server.js",
   "scripts": {
-    "test": "node test/game.test.js && node test/socket.test.js",
+    "test": "node test/game.test.js && node test/bot.test.js && node test/socket.test.js",
     "start": "node server.js"
   },
   "keywords": [],

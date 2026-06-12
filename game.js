@@ -1,4 +1,6 @@
 // Quarto-spellogik, fristående från nätverkslagret så att den kan enhetstestas.
+// Hela filen är en IIFE: i webbläsaren (botläget) får den inte läcka sina
+// toppnivånamn som globala bindningar — bara window.QuartoLogic exporteras.
 //
 // Pjäser kodas som heltal 0–15 där varje bit är en egenskap:
 //   bit 0: 0 = ljus,    1 = mörk
@@ -10,6 +12,8 @@
 //   phase "select": välj en pjäs ur poolen och ge till motståndaren
 //   phase "place":  placera den mottagna pjäsen på en ledig ruta
 // Efter en placering går turen INTE över – samma spelare väljer nästa pjäs.
+
+(function () {
 
 const PLAYERS = ['Emreos', 'Raquel'];
 
@@ -165,7 +169,9 @@ function resetScores(match) {
   return { ok: true };
 }
 
-module.exports = {
+// Exporteras både för Node (server, tester) och webbläsaren (botläget,
+// där samma regelmotor kör helt lokalt utan server).
+const QUARTO_API = {
   PLAYERS,
   LINES,
   otherPlayer,
@@ -180,3 +186,8 @@ module.exports = {
   newGame,
   resetScores,
 };
+
+if (typeof module !== 'undefined' && module.exports) module.exports = QUARTO_API;
+if (typeof window !== 'undefined') window.QuartoLogic = QUARTO_API;
+
+})();

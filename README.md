@@ -15,6 +15,22 @@ Exklusivt för spelarna **Emreos** och **Raquel**.
 - Startspelaren slumpas första partiet och alternerar därefter.
   Ställningen räknas över flera partier.
 
+## Spela mot boten
+
+I lobbyn väntar **Don Quartolomé** — el maestro — med tre svårighetsgrader:
+
+- **Lätt** – placerar och ger pjäser på måfå, ser bara sina egna fyror i rad
+  och kan glatt ge dig den vinnande pjäsen.
+- **Medel** – tar varje omedelbar vinst, ropar på rader du missar och ger dig
+  aldrig en direkt vinnande pjäs om det går att undvika.
+- **Svår** – sökmotor (negamax med alfa–beta och iterativ fördjupning under
+  tidsbudget) som ser gafflar flera drag framåt och spelar slutspelet perfekt.
+
+Botpartier körs helt i webbläsaren (`public/bot.js` + `public/local.js`
+återanvänder regelmotorn i `game.js`) och rör aldrig det delade onlinepartiet —
+du syns inte ens som online medan du tränar. Ställning och pågående parti
+sparas i `localStorage` per plats och svårighetsgrad.
+
 ## Köra lokalt
 
 ```bash
@@ -51,10 +67,12 @@ eftersom spelet ligger i serverminnet nollställs ställningen vid omstart.
 
 | Fil | Ansvar |
 | --- | --- |
-| `game.js` | Ren spellogik (pjäser, turordning, vinstkontroll) — inga beroenden |
+| `game.js` | Ren spellogik (pjäser, turordning, vinstkontroll) — inga beroenden, körs både i Node och webbläsaren |
 | `server.js` | Express + Socket.IO: identitet, onlinestatus, broadcast av tillstånd |
 | `public/` | Frontend: vanilla HTML/CSS/JS, ritar allt utifrån serverns tillstånd |
-| `test/` | Enhetstester, socket-integrationstest och Raquel-bot |
+| `public/bot.js` | Botens beslutslogik i tre nivåer (slump → heuristik → negamax-sökning) |
+| `public/local.js` | Lokal "låtsasserver" för botläget: samma kontrakt som socketvägen |
+| `test/` | Enhetstester (logik + bot), socket-integrationstest och Raquel-bot |
 
 Pjäser kodas som heltal 0–15 där varje bit är en egenskap. Servern är
 auktoritativ: klienten skickar bara intentioner (`selectPiece`, `placePiece`,

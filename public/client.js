@@ -9,7 +9,23 @@ const socket = io();
 const PLAYERS = ['Emreos', 'Raquel'];
 const AVATARS = { Emreos: 'emreos.jpg', Raquel: 'raquel.jpg' };
 
+const BOT_NAME = 'Don Quartolomé';
+const BOT_AVATAR = 'quartolome.jpg';
+const BOT_LEVELS = { easy: 'lätt', medium: 'medel', hard: 'svår' };
+
 let me = null;
+let mode = null;     // 'online' | 'bot' — väljs i lobbyn
+let conn = socket;   // aktiv spelkanal: socket eller lokal botsession
+let botLevel = null;
+
+// I botläget sitter boten på motståndarens plats; visa den med eget
+// namn och porträtt i stället för platsens riktiga namn.
+function displayName(p) {
+  return mode === 'bot' && p !== me ? BOT_NAME : p;
+}
+function avatarFor(p) {
+  return mode === 'bot' && p !== me ? BOT_AVATAR : AVATARS[p];
+}
 
 let auth = null;      // senaste tillstånd från servern
 let predicted = null; // optimistiskt tillstånd efter eget drag, tills servern bekräftat
@@ -120,6 +136,9 @@ function playSound(kind) {
     } else if (kind === 'kudos') {
       tone(523, 0, 0.16, 0.07);
       tone(784, 0.09, 0.22, 0.07);
+    } else if (kind === 'message') {
+      tone(880, 0, 0.08, 0.045, 'triangle'); // diskret tvåtonsping
+      tone(1318.5, 0.08, 0.14, 0.04, 'triangle');
     } else if (kind === 'gong') {
       tone(98, 0, 2.2, 0.16);
       tone(196.5, 0, 1.7, 0.08);
@@ -198,7 +217,7 @@ function onCellTap(cell) {
   const s = effective();
   if (!s || s.game.gameOver || s.game.turn !== me) return;
   if (s.game.phase !== 'place' || s.game.board[cell] !== null) return;
-  socket.emit('placePiece', cell);
+  conn.emit('placePiece', cell);
   const n = structuredClone(s);
   const g = n.game;
   g.board[cell] = g.selectedPiece;
@@ -213,7 +232,7 @@ function onSlotTap(piece) {
   const s = effective();
   if (!s || s.game.gameOver || s.game.turn !== me) return;
   if (s.game.phase !== 'select' || !s.game.pool.includes(piece)) return;
-  socket.emit('selectPiece', piece);
+  conn.emit('selectPiece', piece);
   const n = structuredClone(s);
   const g = n.game;
   g.pool = g.pool.filter((x) => x !== piece);
@@ -363,19 +382,20 @@ function renderHeader(s, g) {
   const right = $('avatar-right');
 
   const myAvatar = AVATARS[me];
-  const oppAvatar = AVATARS[opp];
+  const oppAvatar = avatarFor(opp);
+  const oppName = displayName(opp);
 
   if (left.getAttribute('src') !== myAvatar) left.src = myAvatar;
   if (right.getAttribute('src') !== oppAvatar) right.src = oppAvatar;
 
   if ($('name-left').textContent !== me) $('name-left').textContent = me;
-  if ($('name-right').textContent !== opp) $('name-right').textContent = opp;
+  if ($('name-right').textContent !== oppName) $('name-right').textContent = oppName;
 
   $('sub-left').textContent = 'du';
 
   $('score').textContent = `${s.scores[me]} – ${s.scores[opp]}`;
-  const online = s.presence[opp];
-  $('sub-right').textContent = online ? 'online' : 'offline';
+  const online = mode === 'bot' ? true : s.presence[opp];
+  $('sub-right').textContent = mode === 'bot' ? BOT_LEVELS[botLevel] : online ? 'online' : 'offline';
   $('sub-right').classList.toggle('online', online);
   $('card-right').classList.toggle('offline', !online);
   $('dot-left').className = 'status-dot online';
@@ -386,7 +406,7 @@ function renderHeader(s, g) {
 
 function renderTask(g) {
   const tp = $('task-piece');
-  const opp = opponent();
+  const opp = displayName(opponent());
   const myTurn = g.turn === me && !g.gameOver;
   $('task').classList.toggle('mine', myTurn);
 
@@ -402,7 +422,7 @@ function renderTask(g) {
       title = 'Oavgjort';
       sub = 'brädet vilar';
     } else {
-      title = g.winner === me ? 'Du vann!' : `${g.winner} vann`;
+      title = g.winner === me ? 'Du vann!' : `${displayName(g.winner)} vann`;
       sub = g.endReason === 'falseClaim' ? 'falskt Quarto-utrop' : 'Quarto — fyra i rad';
     }
   } else if (g.phase === 'select') {
@@ -468,12 +488,12 @@ function renderGameOver(g) {
     title = 'Oavgjort';
     sub = 'Alla sexton pjäser lagda — brädet vilar.';
   } else if (g.endReason === 'falseClaim') {
-    title = mine ? 'Du vann!' : `${g.winner} vann`;
+    title = mine ? 'Du vann!' : `${displayName(g.winner)} vann`;
     sub = mine
-      ? `${opponent()} ropade Quarto utan vinnande rad.`
+      ? `${displayName(opponent())} ropade Quarto utan vinnande rad.`
       : 'Du ropade Quarto utan vinnande rad.';
   } else {
-    title = mine ? 'Quarto — du vann!' : `Quarto! ${g.winner} vann`;
+    title = mine ? 'Quarto — du vann!' : `Quarto! ${displayName(g.winner)} vann`;
     sub = 'Fyra i rad med en gemensam egenskap.';
   }
   $('gameover-title').textContent = title;
@@ -502,19 +522,27 @@ function join(seat) {
 }
 
 socket.on('connect', () => {
-  if (me) join(me);
+  if (mode === 'online' && me) join(me);
 });
 
-socket.on('state', (data) => {
-  updateLobbyUI(data);
+// Gemensam mottagare för nytt tillstånd, oavsett om det kommer från
+// servern eller den lokala botsessionen.
+function handleState(data) {
   if (data.seq <= lastSeq) return;
   lastSeq = data.seq;
   auth = data;
   predicted = null;
   applyState(data);
+}
+
+socket.on('state', (data) => {
+  updateLobbyUI(data);
+  if (mode === 'bot') return; // serverns delade parti rör inte botpartiet
+  handleState(data);
 });
 
 socket.on('presence', (presence) => {
+  if (mode === 'bot') return;
   if (auth) {
     auth.presence = presence;
     updateLobbyUI(auth);
@@ -523,6 +551,34 @@ socket.on('presence', (presence) => {
   const s = effective();
   if (s && view) renderHeader(s, s.game);
 });
+
+// ---------- Botläge: lokalt parti utan server ----------
+
+function startBotGame(seat, level) {
+  me = seat;
+  mode = 'bot';
+  botLevel = level;
+  lastSeq = -1;
+  auth = null;
+  predicted = null;
+  view = null;
+  try {
+    localStorage.setItem('quarto.botseat', seat);
+  } catch (e) { /* lagring är aldrig kritiskt */ }
+
+  conn = createLocalSession({
+    humanSeat: seat,
+    level,
+    onState: handleState,
+    onError: showToast,
+    onKudos: showKudos,
+  });
+
+  $('game-container').classList.add('bot-mode');
+  $('menu-chat-btn').classList.add('hidden');
+  $('switch-player').textContent = '⌂ Till lobbyn';
+  conn.start();
+}
 
 function updateLobbyUI(s) {
   if (!s || !s.presence) return;
@@ -556,6 +612,7 @@ function updateLobbyUI(s) {
 }
 
 socket.on('errorMsg', (msg) => {
+  if (mode === 'bot') return;
   showToast(msg);
   // Ett avvisat optimistiskt drag rullas tillbaka till serverns sanning.
   if (predicted) {
@@ -564,7 +621,10 @@ socket.on('errorMsg', (msg) => {
   }
 });
 
-socket.on('kudos', ({ text }) => showKudos(text));
+socket.on('kudos', ({ text }) => {
+  if (mode === 'bot') return;
+  showKudos(text);
+});
 
 // ---------- Lobby & meny ----------
 
@@ -572,10 +632,38 @@ socket.on('kudos', ({ text }) => showKudos(text));
 
 document.querySelectorAll('.identity').forEach((btn) => {
   btn.addEventListener('click', () => {
+    mode = 'online';
+    conn = socket;
     me = btn.dataset.player;
     join(me);
   });
 });
+
+// Botkortet: välj vem du spelar som (sparas), tryck på en nivå för att börja.
+let botSeat = 'Emreos';
+try {
+  const saved = localStorage.getItem('quarto.botseat');
+  if (PLAYERS.includes(saved)) botSeat = saved;
+} catch (e) { /* lagring är aldrig kritiskt */ }
+
+function renderBotSeatChips() {
+  document.querySelectorAll('.bot-seat-chip').forEach((chip) => {
+    chip.classList.toggle('active', chip.dataset.seat === botSeat);
+  });
+}
+
+document.querySelectorAll('.bot-seat-chip').forEach((chip) => {
+  chip.addEventListener('click', () => {
+    botSeat = chip.dataset.seat;
+    renderBotSeatChips();
+  });
+});
+
+document.querySelectorAll('.bot-level').forEach((btn) => {
+  btn.addEventListener('click', () => startBotGame(botSeat, btn.dataset.level));
+});
+
+renderBotSeatChips();
 
 $('menu-btn').addEventListener('click', (e) => {
   e.stopPropagation();
@@ -610,14 +698,14 @@ $('reset-scores-btn').addEventListener('click', (e) => {
   if (!resetArmed) return resetArm(true);
   resetArm(false);
   $('menu').classList.add('hidden');
-  socket.emit('resetScores');
+  conn.emit('resetScores');
 });
 
 // ---------- Spelknappar ----------
 
-$('quarto-btn').addEventListener('click', () => socket.emit('claimQuarto'));
-$('draw-btn').addEventListener('click', () => socket.emit('claimDraw'));
-$('new-game-btn').addEventListener('click', () => socket.emit('newGame'));
+$('quarto-btn').addEventListener('click', () => conn.emit('claimQuarto'));
+$('draw-btn').addEventListener('click', () => conn.emit('claimDraw'));
+$('new-game-btn').addEventListener('click', () => conn.emit('newGame'));
 
 // ---------- Turbanderoll ----------
 
@@ -791,6 +879,8 @@ function toggleChat(show) {
   const isOpen = sidebar.classList.contains('open');
   const shouldOpen = show !== undefined ? show : !isOpen;
 
+  if (shouldOpen) clearUnread();
+
   sidebar.classList.toggle('open', shouldOpen);
   overlay.classList.toggle('hidden', !shouldOpen);
 
@@ -807,9 +897,55 @@ function toggleChat(show) {
   }
 }
 
+// ---------- Avisering om olästa meddelanden (mobil, chatten stängd) ----------
+// På breda skärmar är panelen alltid synlig; på mobil visas en tryckbar pill
+// med avsändare + förhandsvisning, plus en mässingsprick på menyknappen som
+// ligger kvar tills chatten öppnas.
+
+let unreadCount = 0;
+let chatNotifyTimer = null;
+
+function chatVisible() {
+  if (window.matchMedia('(min-width: 850px)').matches) return true; // fast panel
+  const sidebar = $('chat-sidebar');
+  return !!sidebar && sidebar.classList.contains('open');
+}
+
+function notifyMessage(msg) {
+  unreadCount += 1;
+  $('menu-unread').classList.remove('hidden');
+  $('menu-chat-btn').textContent = `💬 Chatt (${unreadCount})`;
+
+  $('chat-notify-img').src = AVATARS[msg.sender] || AVATARS[PLAYERS[0]];
+  $('chat-notify-sender').textContent = msg.sender;
+  $('chat-notify-msg').textContent = msg.text;
+  const pill = $('chat-notify');
+  pill.classList.remove('hidden', 'show');
+  void pill.offsetWidth; // starta om animationen vid tätt följande meddelanden
+  pill.classList.add('show');
+
+  playSound('message');
+  clearTimeout(chatNotifyTimer);
+  chatNotifyTimer = setTimeout(() => $('chat-notify').classList.add('hidden'), 4200);
+}
+
+function clearUnread() {
+  unreadCount = 0;
+  clearTimeout(chatNotifyTimer);
+  $('chat-notify').classList.add('hidden');
+  $('menu-unread').classList.add('hidden');
+  $('menu-chat-btn').textContent = '💬 Chatt';
+}
+
+$('chat-notify').addEventListener('click', () => toggleChat(true));
+
 // Chatt-händelselyssnare
 socket.on('message', (msg) => {
+  if (mode === 'bot') return;
   renderMessage(msg, true);
+  if (mode === 'online' && me && msg.sender !== me && !chatVisible()) {
+    notifyMessage(msg);
+  }
 });
 
 if ($('chat-form')) {
@@ -851,6 +987,7 @@ let touchStartY = 0;
 let isDraggingSidebar = false;
 
 window.addEventListener('touchstart', (e) => {
+  if (mode === 'bot') return; // ingen chatt mot boten
   const sidebar = $('chat-sidebar');
   if (!sidebar) return;
 

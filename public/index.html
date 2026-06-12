@@ -44,6 +44,43 @@
           <span class="seat-action-btn" id="lobby-action-right">Välj</span>
         </button>
       </div>
+
+      <p class="lobby-section-title bot-title">Eller utmana boten</p>
+
+      <div class="bot-card">
+        <div class="bot-head">
+          <div class="seat-avatar-wrap">
+            <img src="quartolome.jpg" alt="Don Quartolomé" class="seat-avatar-img" />
+            <span class="seat-status-dot online"></span>
+          </div>
+          <div class="seat-info">
+            <span class="seat-label">El Maestro</span>
+            <span class="seat-name">Don Quartolomé</span>
+          </div>
+          <div class="bot-seat-toggle" role="group" aria-label="Spela som">
+            <button class="bot-seat-chip" data-seat="Emreos">
+              <img src="emreos.jpg" alt="" />Emreos
+            </button>
+            <button class="bot-seat-chip" data-seat="Raquel">
+              <img src="raquel.jpg" alt="" />Raquel
+            </button>
+          </div>
+        </div>
+        <div class="bot-levels">
+          <button class="bot-level" data-level="easy">
+            <span class="bot-level-name">Lätt</span>
+            <span class="bot-level-sub">snäll</span>
+          </button>
+          <button class="bot-level" data-level="medium">
+            <span class="bot-level-name">Medel</span>
+            <span class="bot-level-sub">klurig</span>
+          </button>
+          <button class="bot-level" data-level="hard">
+            <span class="bot-level-name">Svår</span>
+            <span class="bot-level-sub">skoningslös</span>
+          </button>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -78,7 +115,7 @@
         </div>
   
         <div class="tools">
-          <button id="menu-btn" title="Meny">⋯</button>
+          <button id="menu-btn" title="Meny">⋯<span id="menu-unread" class="menu-unread hidden"></span></button>
           <div id="menu" class="menu hidden">
             <button id="menu-chat-btn">💬 Chatt</button>
             <button id="reset-scores-btn">⟲ Nollställ poäng</button>
@@ -132,11 +169,23 @@
     </div>
   </div>
 
+  <!-- Avisering om nytt chattmeddelande när chatten är stängd (mobil) -->
+  <button id="chat-notify" class="chat-notify hidden" aria-label="Nytt chattmeddelande — öppna chatten">
+    <img id="chat-notify-img" class="chat-notify-img" src="" alt="" />
+    <span class="chat-notify-text">
+      <span id="chat-notify-sender"></span>
+      <span id="chat-notify-msg"></span>
+    </span>
+  </button>
+
   <div id="turn-banner" class="turn-banner hidden"></div>
   <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
   <div id="toast" class="toast hidden"></div>
 
   <script src="/socket.io/socket.io.js"></script>
+  <script src="/game.js"></script>
+  <script src="bot.js"></script>
+  <script src="local.js"></script>
   <script src="client.js"></script>
 </body>
 </html>
