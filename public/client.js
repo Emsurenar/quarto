@@ -299,15 +299,44 @@ function renderPresence() {
   if (!me || !state) return;
   const opp = opponent();
   const online = state.presence[opp];
-  
+  const g = state.game;
+
+  // Spelarkort-element
+  const myCard = document.getElementById(`card-${me}`);
+  const oppCard = document.getElementById(`card-${opp}`);
+
+  // Hantera offline/online-klasser på korten
+  if (myCard) {
+    myCard.classList.remove('offline');
+  }
+  if (oppCard) {
+    if (online) {
+      oppCard.classList.remove('offline');
+    } else {
+      oppCard.classList.add('offline');
+    }
+  }
+
+  // Hantera active-klasser baserat på vems tur det är
+  PLAYERS.forEach((p) => {
+    const card = document.getElementById(`card-${p}`);
+    if (card) {
+      if (g.turn === p && !g.gameOver) {
+        card.classList.add('active');
+      } else {
+        card.classList.remove('active');
+      }
+    }
+  });
+
   // Vår egen status-dot är alltid online (eftersom vi är anslutna till sidan just nu)
   const myDot = document.querySelector(`#card-${me} .status-dot`);
   if (myDot) myDot.className = 'status-dot dot online';
-  
+
   // Motståndarens status-dot
   const oppDot = document.querySelector(`#card-${opp} .status-dot`);
   if (oppDot) oppDot.className = `status-dot dot ${online ? 'online' : 'offline'}`;
-  
+
   // Motståndarens avatar-opacitet och grayscale
   const oppAvatar = document.querySelector(`#card-${opp} .avatar`);
   if (oppAvatar) {

@@ -18,8 +18,8 @@
   --cell-wood: #86593b;
   --cell-wood-alt: #754c30;
   
-  --card: rgba(20, 33, 61, 0.75);
-  --card-border: rgba(212, 175, 55, 0.3);
+  --card: rgba(11, 19, 43, 0.88);
+  --card-border: rgba(212, 175, 55, 0.35);
   --accent: #2ec4b6;
 }
 
@@ -30,10 +30,11 @@ html, body { height: 100%; }
 body {
   font-family: 'Outfit', sans-serif;
   background-color: var(--bg);
-  /* Repeterande kakelnät av användarens bild */
-  background-image: url('bg-tile.jpg');
-  background-repeat: repeat;
-  background-size: 220px 220px;
+  /* Repeterande kakelnät av användarens bild, mörklagt med radial toning för lyxigare känsla och bättre kontrast */
+  background: 
+    radial-gradient(circle at center, rgba(7, 11, 25, 0.45) 0%, rgba(7, 11, 25, 0.9) 100%),
+    url('bg-tile.jpg') repeat;
+  background-size: auto, 220px 220px;
   color: var(--ink);
   display: flex;
   justify-content: center;
@@ -59,7 +60,10 @@ body {
   font-weight: 700;
   letter-spacing: 4px;
   color: var(--gold-soft);
-  text-shadow: 0 3px 6px rgba(0, 0, 0, 0.5);
+  text-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.8),
+    0 8px 16px rgba(0, 0, 0, 0.8),
+    0 0 20px rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   gap: 14px;
@@ -92,10 +96,11 @@ body {
 
 .tagline { 
   font-size: 19px; 
-  color: var(--ink-soft); 
+  color: var(--sand); 
   margin-bottom: 26px; 
   font-style: italic; 
   letter-spacing: 0.5px;
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.9);
 }
 
 .identity-buttons { display: flex; gap: 16px; width: 100%; max-width: 360px; }
@@ -124,9 +129,27 @@ body {
 
 /* ----- Header och status ----- */
 
-#game header { width: 100%; margin-bottom: 10px; }
+#game header {
+  width: 100%;
+  margin-bottom: 12px;
+  background: var(--card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--card-border);
+  border-radius: 18px;
+  padding: 12px 16px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
 
-.header-row { display: flex; justify-content: space-between; align-items: center; }
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
 
 .header-buttons {
   display: flex;
@@ -177,16 +200,29 @@ body {
 .action-text {
   width: 100%;
   text-align: center;
-  font-size: 17px;
-  min-height: 44px;
+  font-size: 16px;
+  font-weight: 600;
+  min-height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4px 8px;
-  color: var(--ink-soft);
+  padding: 8px 16px;
+  color: var(--sand);
+  background: rgba(11, 19, 43, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  margin: 12px 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
-.action-text.mine { color: var(--gold-soft); font-weight: bold; }
+.action-text.mine {
+  color: var(--gold-soft);
+  border-color: rgba(212, 175, 55, 0.65);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.1), 0 4px 15px rgba(0, 0, 0, 0.4);
+}
 
 /* ----- Bräde: exotiskt trä med guldram ----- */
 
@@ -288,11 +324,13 @@ body {
   align-items: center;
   gap: 14px;
   background: var(--card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--card-border);
   border-left: 4px solid var(--gold);
   border-radius: 14px;
   padding: 10px 18px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
 }
 
 .hand svg { width: 42px; height: 60px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4)); }
@@ -317,9 +355,10 @@ body {
   text-transform: uppercase;
   letter-spacing: 2px;
   color: var(--gold-soft);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   text-align: center;
   font-family: 'Cinzel', serif;
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.9);
 }
 
 .pool {
@@ -327,11 +366,13 @@ body {
   grid-template-columns: repeat(8, 1fr);
   gap: 6px;
   background: var(--card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--card-border);
   border-radius: 14px;
   padding: 12px 10px;
   min-height: 118px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
 }
 
 .pool button {
@@ -564,19 +605,26 @@ body {
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  margin-top: 10px;
-  background: var(--card);
-  border: 1px solid var(--card-border);
-  border-radius: 16px;
-  padding: 10px 16px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .player-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  opacity: 0.85;
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.player-card.offline {
+  opacity: 0.45;
+}
+
+.player-card.active {
+  opacity: 1;
+  transform: scale(1.05);
 }
 
 .avatar-wrap {
@@ -592,12 +640,16 @@ body {
   border-radius: 50%;
   border: 2px solid var(--gold);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
-  transition: filter 0.3s, opacity 0.3s, border-color 0.3s;
+  transition: filter 0.3s, opacity 0.3s, border-color 0.3s, box-shadow 0.3s;
 }
 
-.offline-avatar {
+.player-card.active .avatar {
+  border-color: var(--turquoise);
+  box-shadow: 0 0 14px var(--turquoise);
+}
+
+.player-card.offline .avatar {
   filter: grayscale(100%);
-  opacity: 0.6;
   border-color: #4a5768;
 }
 
@@ -614,8 +666,14 @@ body {
 .player-card .name {
   font-size: 13px;
   font-weight: 600;
-  color: var(--ink-soft);
+  color: var(--sand);
   font-family: 'Cinzel', serif;
+  transition: color 0.3s, text-shadow 0.3s;
+}
+
+.player-card.active .name {
+  color: #ffffff;
+  text-shadow: 0 0 8px rgba(46, 196, 182, 0.7);
 }
 
 .players-display .score {
