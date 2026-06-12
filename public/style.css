@@ -1,0 +1,309 @@
+/* Quarto – mobilförst, varm träkänsla */
+
+:root {
+  --bg: #f2e7d5;
+  --ink: #3a2a1a;
+  --ink-soft: #7a6450;
+  --board-frame: #5d3e24;
+  --cell: #c79a63;
+  --cell-alt: #bd8f58;
+  --cell-recess: #a87c49;
+  --accent: #b3402a;
+  --win: #2e7d32;
+  --card: #faf3e6;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: Georgia, 'Times New Roman', serif;
+  background: var(--bg);
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(122, 100, 80, 0.04) 0px,
+    rgba(122, 100, 80, 0.04) 2px,
+    transparent 2px,
+    transparent 14px
+  );
+  color: var(--ink);
+  display: flex;
+  justify-content: center;
+}
+
+.screen {
+  width: 100%;
+  max-width: 480px;
+  padding: 16px 14px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hidden { display: none !important; }
+
+/* ----- Lobby ----- */
+
+#lobby { justify-content: center; min-height: 100vh; gap: 8px; }
+
+.logo {
+  font-size: 56px;
+  letter-spacing: 4px;
+  color: var(--board-frame);
+  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.5);
+}
+
+.logo.small { font-size: 26px; letter-spacing: 2px; }
+
+.tagline { font-size: 20px; color: var(--ink-soft); margin-bottom: 24px; }
+
+.identity-buttons { display: flex; gap: 16px; width: 100%; max-width: 360px; }
+
+.identity {
+  flex: 1;
+  padding: 26px 0;
+  font-family: inherit;
+  font-size: 26px;
+  color: #fff;
+  background: linear-gradient(180deg, #8a5a33, #6b4424);
+  border: none;
+  border-radius: 14px;
+  box-shadow: 0 4px 0 #4a2f17;
+  cursor: pointer;
+}
+
+.identity:active { transform: translateY(3px); box-shadow: 0 1px 0 #4a2f17; }
+
+/* ----- Header och status ----- */
+
+#game header { width: 100%; margin-bottom: 10px; }
+
+.header-row { display: flex; justify-content: space-between; align-items: center; }
+
+#switch-player {
+  background: none;
+  border: 1px solid var(--ink-soft);
+  border-radius: 8px;
+  color: var(--ink-soft);
+  font-size: 16px;
+  padding: 2px 10px;
+  cursor: pointer;
+}
+
+.status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+.dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 5px;
+  vertical-align: baseline;
+}
+
+.dot.online { background: #2e7d32; box-shadow: 0 0 5px #2e7d32; }
+.dot.offline { background: #b0a18e; }
+
+#score { font-weight: bold; color: var(--ink); }
+
+/* ----- Statusrad för tur ----- */
+
+.action-text {
+  width: 100%;
+  text-align: center;
+  font-size: 17px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+}
+
+.action-text.mine { color: var(--accent); font-weight: bold; }
+
+/* ----- Bräde ----- */
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 7px;
+  width: min(92vw, 420px);
+  padding: 12px;
+  background: linear-gradient(160deg, #6b4424, #523317);
+  border-radius: 16px;
+  box-shadow: 0 6px 14px rgba(58, 42, 26, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.25);
+}
+
+.cell {
+  aspect-ratio: 1;
+  background: radial-gradient(circle at 50% 42%, var(--cell-recess) 34%, var(--cell) 40%);
+  border: none;
+  border-radius: 10px;
+  padding: 6%;
+  cursor: default;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+.cell:nth-child(odd) {
+  background: radial-gradient(circle at 50% 42%, var(--cell-recess) 34%, var(--cell-alt) 40%);
+}
+
+.cell.placeable { cursor: pointer; outline: 2px dashed rgba(255, 244, 214, 0.75); outline-offset: -4px; }
+.cell.placeable:active { background: radial-gradient(circle at 50% 42%, #8d6437 34%, var(--cell-alt) 40%); }
+
+.cell.win {
+  outline: 3px solid var(--win);
+  outline-offset: -3px;
+  box-shadow: inset 0 0 12px rgba(46, 125, 50, 0.55);
+}
+
+.cell svg { width: 78%; height: 92%; display: block; }
+
+/* ----- Pjäs i hand ----- */
+
+.hand {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--card);
+  border: 1px solid #d9c5a3;
+  border-radius: 12px;
+  padding: 8px 16px;
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+.hand svg { width: 34px; height: 48px; }
+
+/* ----- Pool ----- */
+
+.pool-wrap { width: 100%; margin-top: 16px; }
+
+.pool-label {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--ink-soft);
+  margin-bottom: 6px;
+  text-align: center;
+}
+
+.pool {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
+  background: var(--card);
+  border: 1px solid #d9c5a3;
+  border-radius: 12px;
+  padding: 10px 8px;
+  min-height: 110px;
+}
+
+.pool button {
+  background: none;
+  border: none;
+  border-radius: 8px;
+  padding: 3px 1px;
+  cursor: default;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.pool button svg { width: 100%; max-width: 36px; height: 46px; }
+
+.pool button.selectable { cursor: pointer; }
+.pool button.selectable:active,
+.pool button.selectable:hover { background: rgba(179, 64, 42, 0.14); }
+
+/* ----- Knappar ----- */
+
+.actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 18px;
+  width: 100%;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.quarto-btn {
+  font-family: inherit;
+  font-size: 24px;
+  letter-spacing: 1px;
+  color: #fff;
+  background: linear-gradient(180deg, #c8502f, #a33620);
+  border: none;
+  border-radius: 12px;
+  padding: 14px 40px;
+  box-shadow: 0 4px 0 #7c2715;
+  cursor: pointer;
+}
+
+.quarto-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #7c2715; }
+
+.secondary-btn {
+  font-family: inherit;
+  font-size: 17px;
+  color: var(--board-frame);
+  background: var(--card);
+  border: 2px solid var(--board-frame);
+  border-radius: 12px;
+  padding: 12px 26px;
+  cursor: pointer;
+}
+
+.secondary-btn:active { background: #ecdfc6; }
+
+/* ----- Banner vid spelslut ----- */
+
+.banner {
+  margin-top: 18px;
+  width: 100%;
+  text-align: center;
+  font-size: 22px;
+  padding: 14px;
+  border-radius: 12px;
+  background: var(--card);
+  border: 2px solid var(--board-frame);
+}
+
+.banner.win-mine { border-color: var(--win); color: var(--win); }
+.banner.win-theirs { border-color: var(--accent); color: var(--accent); }
+
+/* ----- Toast för felmeddelanden ----- */
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: #fff;
+  font-family: Georgia, serif;
+  font-size: 15px;
+  padding: 10px 20px;
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+}
+
+/* ----- Större skärmar ----- */
+
+@media (min-width: 700px) {
+  .screen { max-width: 560px; }
+  .board { width: 460px; }
+  .pool button svg { max-width: 42px; height: 54px; }
+}

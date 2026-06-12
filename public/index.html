@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#3e2a18" />
+  <title>Quarto – Emre &amp; Rakel</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Startskärm: välj identitet -->
+  <section id="lobby" class="screen">
+    <h1 class="logo">Quarto</h1>
+    <p class="tagline">Vem är du?</p>
+    <div class="identity-buttons">
+      <button class="identity" data-player="Emre">Emre</button>
+      <button class="identity" data-player="Rakel">Rakel</button>
+    </div>
+  </section>
+
+  <!-- Spelskärm -->
+  <section id="game" class="screen hidden">
+    <header>
+      <div class="header-row">
+        <h1 class="logo small">Quarto</h1>
+        <button id="switch-player" title="Byt spelare">⇄</button>
+      </div>
+      <div class="status-bar">
+        <span id="opponent-status">
+          <span id="presence-dot" class="dot offline"></span>
+          <span id="presence-text"></span>
+        </span>
+        <span id="score"></span>
+      </div>
+    </header>
+
+    <p id="action-text" class="action-text"></p>
+
+    <div id="board" class="board"></div>
+
+    <div id="hand" class="hand hidden">
+      <span id="hand-label"></span>
+      <span id="hand-piece"></span>
+    </div>
+
+    <div class="pool-wrap">
+      <p class="pool-label">Kvarvarande pjäser</p>
+      <div id="pool" class="pool"></div>
+    </div>
+
+    <div class="actions">
+      <button id="quarto-btn" class="quarto-btn hidden">Quarto!</button>
+      <button id="draw-btn" class="secondary-btn hidden">Avsluta oavgjort</button>
+      <button id="new-game-btn" class="secondary-btn hidden">Nytt parti</button>
+    </div>
+
+    <div id="banner" class="banner hidden"></div>
+  </section>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
+</body>
+</html>

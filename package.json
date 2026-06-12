@@ -1,0 +1,24 @@
+{
+  "name": "quarto",
+  "version": "1.0.0",
+  "description": "Quarto för Emre & Rakel",
+  "main": "server.js",
+  "scripts": {
+    "test": "node test/game.test.js && node test/socket.test.js",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.2.1",
+    "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
