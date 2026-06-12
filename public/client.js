@@ -1,20 +1,32 @@
-/* Quarto-klient: ansluter via Socket.IO, ritar allt utifrån serverns tillstånd. */
+/* Quarto-klient.
+   Arkitektur: servern är auktoritativ, men egna drag appliceras optimistiskt
+   direkt vid tryck (servern bekräftar tyst med samma resultat). DOM:en byggs
+   en gång och uppdateras på plats — inga omrenderingar, inga layoutskift.
+   Pjäser flyger med FLIP-animation mellan förråd → hand → bräde. */
 
 const socket = io();
 
 const PLAYERS = ['Emreos', 'Raquel'];
+const AVATARS = { Emreos: 'emreos.jpg', Raquel: 'raquel.jpg' };
+
 let me = localStorage.getItem('quartoPlayer');
 if (!PLAYERS.includes(me)) me = null;
 
-let state = null; // { seq, game, scores, presence }
+let auth = null;      // senaste tillstånd från servern
+let predicted = null; // optimistiskt tillstånd efter eget drag, tills servern bekräftat
+let view = null;      // det tillstånd som just nu visas i DOM
 let lastSeq = -1;
 
 const $ = (id) => document.getElementById(id);
+const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function opponent() { return me === PLAYERS[0] ? PLAYERS[1] : PLAYERS[0]; }
+function effective() { return predicted || auth; }
 
 // ---------- Pjäsgrafik ----------
 // Pjäs-id är 4 bitar: bit0 mörk, bit1 hög, bit2 fyrkantig, bit3 ihålig.
-// Sidovy i "lackerat trä": elfenben mot ebenholts, kraftig höjdskillnad,
-// tydligt hål med ljus kant för ihåliga pjäser, glansstråk för massiva.
+// Sidovy: elfenben mot ebenholts, kraftig höjdskillnad, tydligt hål med
+// ljus kant för ihåliga pjäser, glansstråk för lyster.
 
 function pieceSVG(id) {
   const dark = id & 1;
@@ -22,7 +34,6 @@ function pieceSVG(id) {
   const square = id & 4;
   const hollow = id & 8;
 
-  // Elfenben respektive ebenholts-lack, valda för maximal kontrast.
   const c = dark
     ? {
         grad: 'qg-d',
@@ -79,7 +90,7 @@ function pieceName(id) {
   ].join(' · ');
 }
 
-// ---------- Ljud (syntetiserat, inga filer) ----------
+// ---------- Ljud (syntetiserat + inspelade utrop) ----------
 
 let audioCtx = null;
 
@@ -118,22 +129,20 @@ function playSound(kind) {
   }
 }
 
-// Webbläsare kräver en användargest innan ljud får spelas.
 document.addEventListener('pointerdown', () => {
   if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
 });
 
-// ---------- Externa ljudfiler med fallback ----------
-
 const customAudios = {
   woah: new Audio('/sounds/woah.wav'),
   namen: new Audio('/sounds/namen.wav'),
-  omojligt: new Audio('/sounds/omojligt.wav')
+  omojligt: new Audio('/sounds/omojligt.wav'),
 };
 
 function playCustomSound(key, fallbackKind) {
   const audio = customAudios[key];
   if (audio) {
+    audio.currentTime = 0;
     audio.play().catch(() => {
       if (fallbackKind) playSound(fallbackKind);
     });
@@ -144,15 +153,335 @@ function playCustomSound(key, fallbackKind) {
 
 function playKudosSound(text) {
   const cleaned = text.trim().toLowerCase();
-  if (cleaned.includes('woah')) {
-    playCustomSound('woah', 'kudos');
-  } else if (cleaned.includes('nämen')) {
-    playCustomSound('namen', 'kudos');
-  } else if (cleaned.includes('inte möjligt') || cleaned.includes('omöjligt')) {
-    playCustomSound('omojligt', 'kudos');
-  } else {
-    playSound('kudos');
+  if (cleaned.includes('woah')) playCustomSound('woah', 'kudos');
+  else if (cleaned.includes('nämen')) playCustomSound('namen', 'kudos');
+  else if (cleaned.includes('inte möjligt') || cleaned.includes('omöjligt')) playCustomSound('omojligt', 'kudos');
+  else playSound('kudos');
+}
+
+// ---------- Persistent DOM: byggs en gång, uppdateras på plats ----------
+
+const cellEls = []; // { btn, holder, piece }
+const slotEls = []; // pool-platser, fast plats per pjäs-id
+let domBuilt = false;
+
+function buildDom() {
+  const board = $('board');
+  for (let i = 0; i < 16; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'cell';
+    const r = i >> 2, c = i & 3;
+    if ((r + c) % 2) btn.classList.add('alt');
+    const holder = document.createElement('div');
+    holder.className = 'cell-piece';
+    btn.appendChild(holder);
+    btn.addEventListener('click', () => onCellTap(i));
+    board.appendChild(btn);
+    cellEls.push({ btn, holder, piece: null });
   }
+  const pool = $('pool');
+  for (let p = 0; p < 16; p++) {
+    const slot = document.createElement('button');
+    slot.className = 'slot';
+    slot.title = pieceName(p);
+    slot.innerHTML = pieceSVG(p);
+    slot.addEventListener('click', () => onSlotTap(p));
+    pool.appendChild(slot);
+    slotEls.push(slot);
+  }
+}
+
+// ---------- Egna drag: optimistiskt + skickas till servern ----------
+
+function onCellTap(cell) {
+  const s = effective();
+  if (!s || s.game.gameOver || s.game.turn !== me) return;
+  if (s.game.phase !== 'place' || s.game.board[cell] !== null) return;
+  socket.emit('placePiece', cell);
+  const n = structuredClone(s);
+  const g = n.game;
+  g.board[cell] = g.selectedPiece;
+  g.selectedPiece = null;
+  g.lastMove = cell;
+  g.phase = 'select';
+  predicted = n;
+  applyState(n);
+}
+
+function onSlotTap(piece) {
+  const s = effective();
+  if (!s || s.game.gameOver || s.game.turn !== me) return;
+  if (s.game.phase !== 'select' || !s.game.pool.includes(piece)) return;
+  socket.emit('selectPiece', piece);
+  const n = structuredClone(s);
+  const g = n.game;
+  g.pool = g.pool.filter((x) => x !== piece);
+  g.selectedPiece = piece;
+  g.turn = opponent();
+  g.phase = 'place';
+  predicted = n;
+  applyState(n);
+}
+
+// ---------- FLIP-flygning: pjäsen glider mellan källa och mål ----------
+
+function flyPiece(pieceId, srcRect, destSvg) {
+  if (!destSvg) return;
+  const dst = destSvg.getBoundingClientRect();
+  if (REDUCED || !srcRect || dst.width === 0 || srcRect.width === 0) {
+    settle(destSvg);
+    return;
+  }
+  const clone = document.createElement('div');
+  clone.className = 'flying';
+  clone.innerHTML = pieceSVG(pieceId);
+  clone.style.width = `${dst.width}px`;
+  clone.style.height = `${dst.height}px`;
+  clone.style.left = `${dst.left}px`;
+  clone.style.top = `${dst.top}px`;
+  const sx = srcRect.width / dst.width;
+  const sy = srcRect.height / dst.height;
+  const dx = srcRect.left - dst.left;
+  const dy = srcRect.top - dst.top;
+  destSvg.style.opacity = '0';
+  document.body.appendChild(clone);
+  const anim = clone.animate(
+    [
+      { transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})` },
+      { transform: 'translate(0, 0) scale(1, 1)' },
+    ],
+    { duration: 260, easing: 'cubic-bezier(0.25, 0.9, 0.3, 1)' }
+  );
+  const done = () => {
+    clone.remove();
+    destSvg.style.opacity = '';
+    settle(destSvg);
+  };
+  anim.onfinish = done;
+  anim.oncancel = done;
+}
+
+function settle(svg) {
+  if (REDUCED || !svg.animate) return;
+  svg.animate(
+    [{ transform: 'scale(1.08)' }, { transform: 'scale(1)' }],
+    { duration: 150, easing: 'ease-out' }
+  );
+}
+
+// ---------- Tillämpa tillstånd: diffa mot vyn, animera skillnaden ----------
+
+function applyState(s) {
+  if (!me || !s) return;
+  $('lobby').classList.add('hidden');
+  $('game').classList.remove('hidden');
+  if (!domBuilt) {
+    buildDom();
+    domBuilt = true;
+  }
+
+  const g = s.game;
+  const old = view ? view.game : null;
+
+  // Vad hände sedan sist? (exakt ett av dessa per drag)
+  let placedCell = null;
+  let selectedNow = null;
+  if (old) {
+    for (let i = 0; i < 16; i++) {
+      if (old.board[i] === null && g.board[i] !== null) placedCell = i;
+    }
+    if (old.selectedPiece === null && g.selectedPiece !== null) selectedNow = g.selectedPiece;
+  }
+  const becameOver = old && !old.gameOver && g.gameOver;
+  const becameFresh = old && old.gameOver && !g.gameOver;
+  const becameMyTurn = old && !g.gameOver && g.turn === me && old.turn !== me;
+
+  // Fånga källrektanglar INNAN DOM:en uppdateras.
+  let flight = null;
+  if (placedCell !== null) {
+    const src = $('task-piece').querySelector('svg');
+    flight = { piece: g.board[placedCell], srcRect: src && src.getBoundingClientRect(), dest: 'cell', cell: placedCell };
+  } else if (selectedNow !== null) {
+    const src = slotEls[selectedNow].querySelector('svg');
+    flight = { piece: selectedNow, srcRect: src && src.getBoundingClientRect(), dest: 'task' };
+  }
+
+  renderHeader(s, g);
+  renderTask(g);
+  renderBoard(g);
+  renderPool(g);
+  renderButtons(g);
+  renderGameOver(g);
+
+  // Övergångar efter att DOM:en fått sitt nya innehåll.
+  if (flight) {
+    playSound(flight.dest === 'cell' ? 'place' : 'select');
+    const destSvg =
+      flight.dest === 'cell'
+        ? cellEls[flight.cell].holder.querySelector('svg')
+        : $('task-piece').querySelector('svg');
+    flyPiece(flight.piece, flight.srcRect, destSvg);
+  }
+
+  if (becameOver) {
+    if (!g.draw) {
+      playSound('gong');
+      shakeBoard();
+      if (g.winner === me) startConfetti();
+    }
+  } else if (becameFresh) {
+    stopConfetti();
+  }
+
+  if (becameMyTurn) {
+    showTurnBanner(g.phase === 'place' ? 'Din tur — placera pjäsen' : 'Din tur — välj en pjäs');
+  }
+
+  view = s;
+}
+
+// ---------- Delrenderare (muterar bara det som ändrats) ----------
+
+function renderHeader(s, g) {
+  const opp = opponent();
+  const left = $('avatar-left');
+  if (!left.getAttribute('src')) {
+    left.src = AVATARS[me];
+    $('avatar-right').src = AVATARS[opp];
+    $('name-left').textContent = me;
+    $('name-right').textContent = opp;
+    $('sub-left').textContent = 'du';
+  }
+  $('score').textContent = `${s.scores[me]} – ${s.scores[opp]}`;
+  const online = s.presence[opp];
+  $('sub-right').textContent = online ? 'online' : 'offline';
+  $('sub-right').classList.toggle('online', online);
+  $('card-right').classList.toggle('offline', !online);
+  $('dot-left').className = 'status-dot online';
+  $('dot-right').className = `status-dot ${online ? 'online' : 'offline'}`;
+  $('card-left').classList.toggle('active', !g.gameOver && g.turn === me);
+  $('card-right').classList.toggle('active', !g.gameOver && g.turn === opp);
+}
+
+function renderTask(g) {
+  const tp = $('task-piece');
+  const opp = opponent();
+  const myTurn = g.turn === me && !g.gameOver;
+  $('task').classList.toggle('mine', myTurn);
+
+  const pieceKey = g.selectedPiece === null ? '' : String(g.selectedPiece);
+  if (tp.dataset.piece !== pieceKey) {
+    tp.innerHTML = pieceKey === '' ? '<div class="task-placeholder"></div>' : pieceSVG(g.selectedPiece);
+    tp.dataset.piece = pieceKey;
+  }
+
+  let title, sub;
+  if (g.gameOver) {
+    if (g.draw) {
+      title = 'Oavgjort';
+      sub = 'brädet vilar';
+    } else {
+      title = g.winner === me ? 'Du vann!' : `${g.winner} vann`;
+      sub = g.endReason === 'falseClaim' ? 'falskt Quarto-utrop' : 'Quarto — fyra i rad';
+    }
+  } else if (g.phase === 'select') {
+    title = myTurn ? `Välj en pjäs till ${opp}` : `${opp} väljer en pjäs åt dig`;
+    sub = myTurn ? 'tryck på en pjäs i förrådet' : 'vänta …';
+  } else {
+    title = myTurn ? 'Placera pjäsen' : `${opp} placerar`;
+    sub = pieceName(g.selectedPiece);
+  }
+  $('task-title').textContent = title;
+  $('task-sub').textContent = sub;
+}
+
+function renderBoard(g) {
+  const canPlace = !g.gameOver && g.turn === me && g.phase === 'place';
+  for (let i = 0; i < 16; i++) {
+    const ce = cellEls[i];
+    const piece = g.board[i];
+    if (ce.piece !== piece) {
+      ce.holder.innerHTML = piece === null ? '' : pieceSVG(piece);
+      ce.piece = piece;
+    }
+    const placeable = canPlace && piece === null;
+    ce.btn.classList.toggle('placeable', placeable);
+    ce.btn.classList.toggle('last', piece !== null && i === g.lastMove && !g.gameOver);
+    ce.btn.classList.toggle('win', !!(g.winningLine && g.winningLine.includes(i)));
+    ce.btn.disabled = !placeable;
+  }
+}
+
+function renderPool(g) {
+  const canSelect = !g.gameOver && g.turn === me && g.phase === 'select';
+  $('pool').classList.toggle('armed', canSelect);
+  for (let p = 0; p < 16; p++) {
+    const inPool = g.pool.includes(p);
+    const slot = slotEls[p];
+    slot.classList.toggle('taken', !inPool);
+    slot.classList.toggle('selectable', canSelect && inPool);
+    slot.disabled = !(canSelect && inPool);
+  }
+}
+
+function renderButtons(g) {
+  const myTurn = g.turn === me && !g.gameOver;
+  const full = g.board.every((c) => c !== null);
+  $('quarto-btn').disabled = !myTurn;
+  $('draw-btn').classList.toggle('hidden', !(myTurn && full));
+}
+
+const PROVERBS = [
+  'Den som ger bort en hög pjäs sover sällan lugnt.',
+  'Brädet är litet — ångern är stor.',
+  'Fyra i rad gläder ögat, men bara den som ropar vinner.',
+  'En ihålig pjäs väger lätt; ett förhastat utrop väger tungt.',
+  'Den vise ser raden innan den finns.',
+  'Te först, Quarto sedan. Alltid.',
+  'Lugn som vatten, vass som en fyrkantig pjäs.',
+  'Även mästaren började med att ge bort fel pjäs.',
+  'Tystnad är guld. Quarto är jade.',
+  'Motståndarens leende säger mer än brädet.',
+];
+
+function renderGameOver(g) {
+  const ov = $('gameover');
+  if (!g.gameOver) {
+    ov.classList.add('hidden');
+    return;
+  }
+  const wasHidden = ov.classList.contains('hidden');
+  ov.classList.remove('hidden');
+  const mine = !g.draw && g.winner === me;
+  ov.classList.toggle('win', mine);
+
+  let title, sub;
+  if (g.draw) {
+    title = 'Oavgjort';
+    sub = 'Alla sexton pjäser lagda — brädet vilar.';
+  } else if (g.endReason === 'falseClaim') {
+    title = mine ? 'Du vann!' : `${g.winner} vann`;
+    sub = mine
+      ? `${opponent()} ropade Quarto utan vinnande rad.`
+      : 'Du ropade Quarto utan vinnande rad.';
+  } else {
+    title = mine ? 'Quarto — du vann!' : `Quarto! ${g.winner} vann`;
+    sub = 'Fyra i rad med en gemensam egenskap.';
+  }
+  $('gameover-title').textContent = title;
+  $('gameover-sub').textContent = sub;
+  if (wasHidden) {
+    $('gameover-proverb').textContent = `„${PROVERBS[Math.floor(Math.random() * PROVERBS.length)]}”`;
+  }
+}
+
+function shakeBoard() {
+  if (REDUCED) return;
+  const board = $('board');
+  board.classList.remove('shake');
+  void board.offsetWidth;
+  board.classList.add('shake');
+  setTimeout(() => board.classList.remove('shake'), 650);
 }
 
 // ---------- Anslutning ----------
@@ -161,8 +490,9 @@ function join(name) {
   socket.emit('join', name, (res) => {
     if (!res.ok) return showToast(res.error);
     lastSeq = res.state.seq;
-    state = res.state;
-    render();
+    auth = res.state;
+    predicted = null;
+    applyState(auth);
   });
 }
 
@@ -173,19 +503,30 @@ socket.on('connect', () => {
 socket.on('state', (data) => {
   if (data.seq <= lastSeq) return;
   lastSeq = data.seq;
-  state = data;
-  render();
+  auth = data;
+  predicted = null;
+  applyState(data);
 });
 
 socket.on('presence', (presence) => {
-  if (state) state.presence = presence;
-  renderPresence();
+  if (auth) auth.presence = presence;
+  if (predicted) predicted.presence = presence;
+  const s = effective();
+  if (s && view) renderHeader(s, s.game);
 });
 
-socket.on('errorMsg', showToast);
+socket.on('errorMsg', (msg) => {
+  showToast(msg);
+  // Ett avvisat optimistiskt drag rullas tillbaka till serverns sanning.
+  if (predicted) {
+    predicted = null;
+    if (auth) applyState(auth);
+  }
+});
+
 socket.on('kudos', ({ text }) => showKudos(text));
 
-// ---------- Lobby ----------
+// ---------- Lobby & meny ----------
 
 document.querySelectorAll('.identity').forEach((btn) => {
   btn.addEventListener('click', () => {
@@ -195,262 +536,64 @@ document.querySelectorAll('.identity').forEach((btn) => {
   });
 });
 
+$('menu-btn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  $('menu').classList.toggle('hidden');
+  resetArm(false);
+});
+
+document.addEventListener('click', (e) => {
+  if (!$('menu').classList.contains('hidden') && !$('menu').contains(e.target)) {
+    $('menu').classList.add('hidden');
+    resetArm(false);
+  }
+});
+
 $('switch-player').addEventListener('click', () => {
   localStorage.removeItem('quartoPlayer');
   location.reload();
 });
 
-// ---------- Actions ----------
+// Nollställning av poäng kräver två tryck — inga blockerande dialogrutor.
+let resetArmed = false;
+let resetTimer = null;
+function resetArm(on) {
+  resetArmed = on;
+  $('reset-scores-btn').textContent = on ? 'Säker? Tryck igen' : '⟲ Nollställ poäng';
+  $('reset-scores-btn').classList.toggle('armed', on);
+  clearTimeout(resetTimer);
+  if (on) resetTimer = setTimeout(() => resetArm(false), 3000);
+}
+
+$('reset-scores-btn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (!resetArmed) return resetArm(true);
+  resetArm(false);
+  $('menu').classList.add('hidden');
+  socket.emit('resetScores');
+});
+
+// ---------- Spelknappar ----------
 
 $('quarto-btn').addEventListener('click', () => socket.emit('claimQuarto'));
 $('draw-btn').addEventListener('click', () => socket.emit('claimDraw'));
 $('new-game-btn').addEventListener('click', () => socket.emit('newGame'));
-$('reset-scores-btn').addEventListener('click', () => {
-  if (confirm('Vill du verkligen nollställa poängställningen?')) {
-    socket.emit('resetScores');
-  }
-});
 
-// ---------- Rendering ----------
-
-// Föregående tillstånd, för ljud- och animationstriggers.
-let prevPlaced = -1;
-let prevPool = -1;
-let prevGameOver = false;
-let prevTurn = null;
-let prevPhase = null;
-
-function opponent() {
-  return me === PLAYERS[0] ? PLAYERS[1] : PLAYERS[0];
-}
+// ---------- Turbanderoll ----------
 
 let turnBannerTimer = null;
 function showTurnBanner(text) {
+  if (REDUCED) return;
   const banner = $('turn-banner');
-  if (!banner) return;
   banner.textContent = text;
-  banner.classList.remove('hidden');
-  banner.classList.remove('show');
-  void banner.offsetWidth; // trigger reflow
+  banner.classList.remove('hidden', 'show');
+  void banner.offsetWidth;
   banner.classList.add('show');
   clearTimeout(turnBannerTimer);
-  turnBannerTimer = setTimeout(() => {
-    banner.classList.add('hidden');
-  }, 2000);
+  turnBannerTimer = setTimeout(() => banner.classList.add('hidden'), 1600);
 }
 
-function render() {
-  if (!me || !state) return;
-  $('lobby').classList.add('hidden');
-  $('game').classList.remove('hidden');
-
-  const g = state.game;
-  const myTurn = g.turn === me && !g.gameOver;
-  const placed = g.board.filter((c) => c !== null).length;
-
-  // Ljudeffekter utifrån vad som hänt sedan förra tillståndet.
-  const justPlaced = prevPlaced >= 0 && placed > prevPlaced;
-  if (justPlaced) playSound('place');
-  else if (prevPool >= 0 && g.pool.length < prevPool && placed === prevPlaced) playSound('select');
-  
-  if (!prevGameOver && g.gameOver && !g.draw) {
-    playSound('gong');
-    // Starta konfetti och skaka brädet vid vinst
-    startConfetti();
-    const gameScreen = $('game');
-    if (gameScreen) {
-      gameScreen.classList.remove('shake');
-      void gameScreen.offsetWidth; // reflow
-      gameScreen.classList.add('shake');
-      setTimeout(() => gameScreen.classList.remove('shake'), 600);
-    }
-  } else if (!g.gameOver) {
-    stopConfetti();
-  }
-
-  // Visa tur-banderoll om det precis blivit vår tur
-  const turnChanged = prevTurn !== g.turn || prevPhase !== g.phase;
-  if (turnChanged && myTurn) {
-    const opp = opponent();
-    const text = g.phase === 'select'
-      ? `Din tur: välj en pjäs att ge till ${opp}`
-      : 'Din tur: placera pjäsen';
-    showTurnBanner(text);
-  }
-
-  renderPresence();
-  $('score').textContent = `${state.scores[PLAYERS[0]]} – ${state.scores[PLAYERS[1]]}`;
-
-  renderActionText(g, myTurn);
-  renderBoard(g, myTurn, justPlaced);
-  renderHand(g);
-  renderPool(g, myTurn);
-  renderButtons(g, myTurn);
-  renderBanner(g);
-
-  prevPlaced = placed;
-  prevPool = g.pool.length;
-  prevGameOver = g.gameOver;
-  prevTurn = g.turn;
-  prevPhase = g.phase;
-}
-
-function renderPresence() {
-  if (!me || !state) return;
-  const opp = opponent();
-  const online = state.presence[opp];
-  const g = state.game;
-
-  // Spelarkort-element
-  const myCard = document.getElementById(`card-${me}`);
-  const oppCard = document.getElementById(`card-${opp}`);
-
-  // Hantera offline/online-klasser på korten
-  if (myCard) {
-    myCard.classList.remove('offline');
-  }
-  if (oppCard) {
-    if (online) {
-      oppCard.classList.remove('offline');
-    } else {
-      oppCard.classList.add('offline');
-    }
-  }
-
-  // Hantera active-klasser baserat på vems tur det är
-  PLAYERS.forEach((p) => {
-    const card = document.getElementById(`card-${p}`);
-    if (card) {
-      if (g.turn === p && !g.gameOver) {
-        card.classList.add('active');
-      } else {
-        card.classList.remove('active');
-      }
-    }
-  });
-
-  // Vår egen status-dot är alltid online (eftersom vi är anslutna till sidan just nu)
-  const myDot = document.querySelector(`#card-${me} .status-dot`);
-  if (myDot) myDot.className = 'status-dot dot online';
-
-  // Motståndarens status-dot
-  const oppDot = document.querySelector(`#card-${opp} .status-dot`);
-  if (oppDot) oppDot.className = `status-dot dot ${online ? 'online' : 'offline'}`;
-
-  // Motståndarens avatar-opacitet och grayscale
-  const oppAvatar = document.querySelector(`#card-${opp} .avatar`);
-  if (oppAvatar) {
-    if (online) {
-      oppAvatar.classList.remove('offline-avatar');
-    } else {
-      oppAvatar.classList.add('offline-avatar');
-    }
-  }
-}
-
-function renderActionText(g, myTurn) {
-  const el = $('action-text');
-  el.classList.toggle('mine', myTurn);
-  if (g.gameOver) {
-    el.textContent = '';
-    return;
-  }
-  const opp = opponent();
-  if (g.phase === 'select') {
-    el.textContent = myTurn
-      ? `Din tur: välj en pjäs att ge till ${opp}`
-      : `${opp} väljer en pjäs åt dig …`;
-  } else {
-    el.textContent = myTurn
-      ? 'Din tur: placera pjäsen på en ledig ruta'
-      : `${opp} placerar pjäsen …`;
-  }
-}
-
-function renderBoard(g, myTurn, justPlaced) {
-  const board = $('board');
-  board.innerHTML = '';
-  const canPlace = myTurn && g.phase === 'place';
-  for (let i = 0; i < 16; i++) {
-    const cell = document.createElement('button');
-    cell.className = 'cell';
-    const piece = g.board[i];
-    if (piece !== null) {
-      cell.innerHTML = pieceSVG(piece);
-      if (i === g.lastMove && !g.gameOver) {
-        cell.classList.add('last');
-        if (justPlaced) cell.classList.add('pop');
-      }
-    } else if (canPlace) {
-      cell.classList.add('placeable');
-      cell.addEventListener('click', () => socket.emit('placePiece', i));
-    }
-    if (g.winningLine && g.winningLine.includes(i)) cell.classList.add('win');
-    board.appendChild(cell);
-  }
-}
-
-function renderHand(g) {
-  const hand = $('hand');
-  if (g.selectedPiece === null) {
-    hand.classList.add('hidden');
-    return;
-  }
-  hand.classList.remove('hidden');
-  const placer = g.turn; // i fasen "place" är det alltid turspelaren som placerar
-  $('hand-label').textContent =
-    placer === me ? 'Pjäs att placera:' : `${placer} ska placera:`;
-  $('hand-name').textContent = pieceName(g.selectedPiece);
-  $('hand-piece').innerHTML = pieceSVG(g.selectedPiece);
-}
-
-function renderPool(g, myTurn) {
-  const pool = $('pool');
-  pool.innerHTML = '';
-  const canSelect = myTurn && g.phase === 'select';
-  for (const piece of g.pool) {
-    const btn = document.createElement('button');
-    btn.innerHTML = pieceSVG(piece);
-    btn.title = pieceName(piece);
-    if (canSelect) {
-      btn.classList.add('selectable');
-      btn.addEventListener('click', () => socket.emit('selectPiece', piece));
-    }
-    pool.appendChild(btn);
-  }
-}
-
-function renderButtons(g, myTurn) {
-  const boardFull = g.board.every((c) => c !== null);
-  $('quarto-btn').classList.toggle('hidden', !myTurn);
-  $('draw-btn').classList.toggle('hidden', !(myTurn && boardFull));
-  $('new-game-btn').classList.toggle('hidden', !g.gameOver);
-}
-
-function renderBanner(g) {
-  const banner = $('banner');
-  if (!g.gameOver) {
-    banner.className = 'banner hidden';
-    return;
-  }
-  banner.classList.remove('hidden');
-  if (g.draw) {
-    banner.className = 'banner';
-    banner.textContent = 'Oavgjort! Brädet vilar.';
-    return;
-  }
-  const mine = g.winner === me;
-  banner.className = `banner ${mine ? 'win-mine' : 'win-theirs'}`;
-  if (g.endReason === 'falseClaim') {
-    banner.textContent = mine
-      ? `${opponent()} ropade Quarto utan vinnande rad – du vinner!`
-      : 'Falskt Quarto-utrop – du förlorar partiet.';
-  } else {
-    banner.textContent = mine ? 'Quarto! Du vann! 🎉' : `Quarto! ${g.winner} vann.`;
-  }
-}
-
-// ---------- Canvas-konfettieffekt ----------
+// ---------- Konfetti ----------
 
 let confettiActive = false;
 let confettiParticles = [];
@@ -470,7 +613,6 @@ class ConfettiParticle {
     this.x = Math.random() * window.innerWidth;
     this.y = Math.random() * -window.innerHeight - 20;
     this.size = Math.random() * 8 + 6;
-    // Använd färgpalett från det nya temat: guld, turkos, ljussand, korall
     this.color = ['#d4af37', '#f3c63f', '#2ec4b6', '#f4ebe1', '#ff5e5b'][Math.floor(Math.random() * 5)];
     this.speedX = Math.random() * 4 - 2;
     this.speedY = Math.random() * 5 + 4;
@@ -498,13 +640,11 @@ class ConfettiParticle {
 }
 
 function startConfetti() {
-  if (confettiActive) return;
+  if (confettiActive || REDUCED) return;
   confettiActive = true;
   resizeConfettiCanvas();
   confettiParticles = [];
-  for (let i = 0; i < 120; i++) {
-    confettiParticles.push(new ConfettiParticle());
-  }
+  for (let i = 0; i < 120; i++) confettiParticles.push(new ConfettiParticle());
   animateConfetti();
 }
 
@@ -518,7 +658,7 @@ function stopConfetti() {
 function animateConfetti() {
   if (!confettiActive) return;
   confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
-  for (let p of confettiParticles) {
+  for (const p of confettiParticles) {
     p.update();
     p.draw();
   }

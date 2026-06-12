@@ -2,83 +2,96 @@
 <html lang="sv">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#3e2a18" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#070b19" />
   <title>Quarto – Emreos &amp; Raquel</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
   <!-- Startskärm: välj identitet -->
-  <section id="lobby" class="screen">
-    <h1 class="logo">Quarto <span class="seal">٤</span></h1>
-    <p class="tagline">Vem är du?</p>
-    <div class="identity-buttons">
-      <button class="identity" data-player="Emreos">
-        <img src="emreos.jpg" alt="Emreos" class="profile-img-lobby" />
-        <span>Emreos</span>
-      </button>
-      <button class="identity" data-player="Raquel">
-        <img src="raquel.jpg" alt="Raquel" class="profile-img-lobby" />
-        <span>Raquel</span>
-      </button>
+  <section id="lobby" class="lobby">
+    <div class="lobby-inner">
+      <h1 class="logo">Quarto <span class="seal">٤</span></h1>
+      <p class="tagline">Vem är du?</p>
+      <div class="identity-buttons">
+        <button class="identity" data-player="Emreos">
+          <img src="emreos.jpg" alt="Emreos" class="profile-img-lobby" />
+          <span>Emreos</span>
+        </button>
+        <button class="identity" data-player="Raquel">
+          <img src="raquel.jpg" alt="Raquel" class="profile-img-lobby" />
+          <span>Raquel</span>
+        </button>
+      </div>
     </div>
   </section>
 
-  <!-- Spelskärm -->
-  <section id="game" class="screen hidden">
-    <header>
-      <div class="header-row">
-        <h1 class="logo small">Quarto <span class="seal">٤</span></h1>
-        <div class="header-buttons">
-          <button id="reset-scores-btn" title="Nollställ poäng">⟲</button>
-          <button id="switch-player" title="Byt spelare">⇄</button>
+  <!-- Spelskärm: fast yta utan scroll -->
+  <section id="game" class="app hidden">
+
+    <header class="topbar">
+      <div class="player-card" id="card-left">
+        <div class="avatar-wrap">
+          <img id="avatar-left" class="avatar" alt="" />
+          <span id="dot-left" class="status-dot"></span>
+        </div>
+        <div class="player-meta">
+          <span id="name-left" class="name"></span>
+          <span id="sub-left" class="sub"></span>
         </div>
       </div>
-      <div class="players-display">
-        <div class="player-card" id="card-Emreos">
-          <div class="avatar-wrap">
-            <img src="emreos.jpg" alt="Emreos" class="avatar" />
-            <span class="status-dot dot offline"></span>
-          </div>
-          <span class="name">Emreos</span>
+
+      <div class="score-wrap"><span id="score" class="score">0 – 0</span></div>
+
+      <div class="player-card right" id="card-right">
+        <div class="player-meta right">
+          <span id="name-right" class="name"></span>
+          <span id="sub-right" class="sub"></span>
         </div>
-        <span id="score" class="score">0 – 0</span>
-        <div class="player-card" id="card-Raquel">
-          <div class="avatar-wrap">
-            <img src="raquel.jpg" alt="Raquel" class="avatar" />
-            <span class="status-dot dot offline"></span>
-          </div>
-          <span class="name">Raquel</span>
+        <div class="avatar-wrap">
+          <img id="avatar-right" class="avatar" alt="" />
+          <span id="dot-right" class="status-dot"></span>
+        </div>
+      </div>
+
+      <div class="tools">
+        <button id="menu-btn" title="Meny">⋯</button>
+        <div id="menu" class="menu hidden">
+          <button id="reset-scores-btn">⟲ Nollställ poäng</button>
+          <button id="switch-player">⇄ Byt spelare</button>
         </div>
       </div>
     </header>
 
-    <p id="action-text" class="action-text"></p>
-
-    <div id="board" class="board"></div>
-
-    <div id="hand" class="hand hidden">
-      <span id="hand-piece"></span>
-      <div class="hand-info">
-        <span id="hand-label"></span>
-        <span id="hand-name" class="hand-name"></span>
+    <div id="task" class="task">
+      <div id="task-piece" class="task-piece"></div>
+      <div class="task-text">
+        <span id="task-title"></span>
+        <span id="task-sub"></span>
       </div>
     </div>
 
-    <div class="pool-wrap">
-      <p class="pool-label">Kvarvarande pjäser</p>
-      <div id="pool" class="pool"></div>
+    <div class="board-zone"><div id="board" class="board"></div></div>
+
+    <div id="pool" class="pool"></div>
+
+    <div class="bottombar">
+      <button id="quarto-btn" class="quarto-btn" disabled>Quarto!</button>
+      <button id="draw-btn" class="draw-btn hidden">Oavgjort?</button>
     </div>
 
-    <div class="actions">
-      <button id="quarto-btn" class="quarto-btn hidden">Quarto!</button>
-      <button id="draw-btn" class="secondary-btn hidden">Avsluta oavgjort</button>
-      <button id="new-game-btn" class="secondary-btn hidden">Nytt parti</button>
-    </div>
-
-    <div id="banner" class="banner hidden"></div>
   </section>
+
+  <!-- Spelslut: overlay i stället för layoutskiftande banner -->
+  <div id="gameover" class="gameover hidden">
+    <div class="gameover-card">
+      <p id="gameover-title"></p>
+      <p id="gameover-sub"></p>
+      <p id="gameover-proverb" class="proverb"></p>
+      <button id="new-game-btn" class="new-game-btn">Nytt parti</button>
+    </div>
+  </div>
 
   <div id="turn-banner" class="turn-banner hidden"></div>
   <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
