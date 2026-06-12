@@ -325,7 +325,7 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   justify-content: center;
 }
 
-.task-piece svg { width: 32px; height: 46px; filter: drop-shadow(0 3px 4px rgba(78, 62, 36, 0.3)); }
+.task-piece svg { width: 32px; height: 46px; filter: drop-shadow(0 3px 4px rgba(78, 62, 36, 0.3)); overflow: visible; }
 
 .task-placeholder {
   width: 24px;
@@ -432,6 +432,7 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   max-width: 100%;
   filter: drop-shadow(0 5px 8px rgba(0, 0, 0, 0.65));
   transform-origin: 50% 88%;
+  overflow: visible;
 }
 
 .cell.placeable {
@@ -478,7 +479,7 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   transform-origin: top left;
   will-change: transform;
 }
-.flying svg { width: 100%; height: 100%; filter: drop-shadow(0 6px 9px rgba(78, 62, 36, 0.38)); }
+.flying svg { width: 100%; height: 100%; filter: drop-shadow(0 6px 9px rgba(78, 62, 36, 0.38)); overflow: visible; }
 
 /* Diskret skälvning vid vinst */
 .board.shake { animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
@@ -524,7 +525,7 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   box-shadow: inset 0 1px 3px rgba(78, 62, 36, 0.12);
   min-width: 0;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
   transition: background 0.2s;
 }
 
@@ -533,6 +534,7 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   max-width: 100%;
   filter: drop-shadow(0 2px 3px rgba(78, 62, 36, 0.3));
   transition: opacity 0.3s;
+  overflow: visible;
 }
 
 .slot.taken svg { opacity: 0; }
