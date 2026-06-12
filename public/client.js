@@ -280,6 +280,7 @@ function applyState(s) {
   if (!domBuilt) {
     buildDom();
     domBuilt = true;
+    updateBoardSize();
   }
 
   const g = s.game;
@@ -609,7 +610,17 @@ function resizeConfettiCanvas() {
     confettiCanvas.height = window.innerHeight;
   }
 }
-window.addEventListener('resize', resizeConfettiCanvas);
+function updateBoardSize() {
+  const board = $('board');
+  if (board) {
+    const rect = board.getBoundingClientRect();
+    document.documentElement.style.setProperty('--board-size', `${rect.width}px`);
+  }
+}
+window.addEventListener('resize', () => {
+  resizeConfettiCanvas();
+  updateBoardSize();
+});
 
 class DustParticle {
   constructor() {

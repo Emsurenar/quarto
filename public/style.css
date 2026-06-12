@@ -377,40 +377,45 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   grid-template-rows: repeat(4, 1fr);
-  gap: 7px;
-  padding: 12px;
-  background: linear-gradient(168deg, #ece6d8 0%, var(--board-face) 55%, #e2dbca 100%);
-  border: 1px solid var(--line-strong);
-  border-radius: 22px;
+  padding:
+    calc(var(--board-size) * 0.0791)
+    calc(var(--board-size) * 0.0801)
+    calc(var(--board-size) * 0.0732)
+    calc(var(--board-size) * 0.0664);
+  column-gap: calc(var(--board-size) * 0.0241);
+  row-gap: calc(var(--board-size) * 0.03125);
+  position: relative;
+  background-image: url('wood-board.png');
+  background-size: cover;
+  background-position: center;
+  border: none;
+  border-radius: 24px;
   box-shadow:
-    0 0 0 1px rgba(168, 133, 74, 0.16),
-    var(--shadow-soft),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    0 24px 60px rgba(10, 6, 3, 0.45),
+    0 8px 24px rgba(10, 6, 3, 0.25);
 }
 
 .cell {
   position: relative;
-  background: var(--cell-bone);
-  border: 1px solid var(--line);
-  border-radius: 13px;
+  background: transparent;
+  border: none;
+  border-radius: 13.5%;
   cursor: default;
-  box-shadow: inset 0 2px 5px rgba(78, 62, 36, 0.12);
-  transition: background 0.25s, border-color 0.25s;
+  box-shadow: none;
+  transition: background 0.25s, box-shadow 0.25s;
   padding: 0;
   min-height: 0;
   min-width: 0;
 }
 
-.cell.alt { background: var(--cell-bone-alt); }
+.cell.alt {
+  background: transparent;
+  box-shadow: none;
+}
 
-/* diskret cirkulär försänkning i varje ruta */
+/* diskret cirkulär försänkning i varje ruta - DÖLJS HÄR */
 .cell::before {
-  content: '';
-  position: absolute;
-  inset: 18%;
-  border-radius: 50%;
-  box-shadow: inset 0 1px 4px rgba(78, 62, 36, 0.16);
-  opacity: 0.6;
+  display: none;
 }
 
 .cell-piece {
@@ -425,7 +430,7 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
 .cell-piece svg {
   height: 96%;
   max-width: 100%;
-  filter: drop-shadow(0 4px 5px rgba(78, 62, 36, 0.32));
+  filter: drop-shadow(0 5px 8px rgba(0, 0, 0, 0.65));
   transform-origin: 50% 88%;
 }
 
@@ -434,27 +439,35 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   animation: breathe 2.2s ease-in-out infinite;
 }
 
-.cell.placeable:hover { background: #fbf8f0; border-color: var(--brass); }
-.cell.placeable:active { background: #ece5d4; }
+.cell.placeable:hover {
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 2px rgba(168, 133, 74, 0.7);
+}
+.cell.placeable:active {
+  background: rgba(0, 0, 0, 0.12);
+  box-shadow: inset 0 0 0 2px rgba(168, 133, 74, 0.85);
+}
 
 @keyframes breathe {
-  0%, 100% { border-color: var(--brass-faint); }
-  50% { border-color: var(--brass-dim); }
+  0%, 100% { border-color: rgba(168, 133, 74, 0.12); }
+  50% { border-color: rgba(168, 133, 74, 0.35); }
 }
 
 .cell.last {
-  border-color: var(--brass-dim);
-  box-shadow: inset 0 2px 5px rgba(78, 62, 36, 0.12), inset 0 0 0 1px var(--brass-dim);
+  box-shadow: inset 0 0 0 2px var(--brass);
 }
 
 .cell.win {
-  border-color: var(--brass);
   animation: winPulse 1.6s ease-in-out infinite;
 }
 
 @keyframes winPulse {
-  0%, 100% { box-shadow: inset 0 0 10px rgba(168, 133, 74, 0.18); }
-  50% { box-shadow: inset 0 0 24px rgba(168, 133, 74, 0.45); }
+  0%, 100% {
+    box-shadow: inset 0 0 0 2.5px var(--brass-bright), inset 0 0 8px rgba(168, 133, 74, 0.4);
+  }
+  50% {
+    box-shadow: inset 0 0 0 2.5px #ffffff, inset 0 0 16px rgba(255, 255, 255, 0.7);
+  }
 }
 
 /* Flygande pjäs under FLIP-animation */
