@@ -1,6 +1,7 @@
 // Integrationstest: startar servern och låter två socket.io-klienter
 // (Emreos och Raquel) spela ett helt parti. Körs med: node test/socket.test.js
 process.env.PORT = '3199';
+process.env.NODE_ENV = 'test';
 const assert = require('assert');
 const { io: ioc } = require('socket.io-client');
 const { server } = require('../server');
@@ -147,17 +148,7 @@ async function main() {
   assert.strictEqual(state.scores.Raquel, 0);
   ok('nollställning av poäng via socket uppdaterar båda parter');
 
-  // Testa anslutning med anpassat namn och profilbild
-  const customJoinPromise = nextEvent(emre.socket, 'state');
-  rakel2.socket.emit('join', 'Raquel', 'Bob', 'bob.jpg', (res) => {
-    assert.strictEqual(res.ok, true);
-    assert.strictEqual(res.state.metadata.Raquel.name, 'Bob');
-    assert.strictEqual(res.state.metadata.Raquel.avatar, 'bob.jpg');
-  });
-  const customJoinState = await customJoinPromise;
-  assert.strictEqual(customJoinState.metadata.Raquel.name, 'Bob');
-  assert.strictEqual(customJoinState.metadata.Raquel.avatar, 'bob.jpg');
-  ok('anpassat namn och profilbild uppdateras och synkas vid join');
+
 
   // Chattfunktion: Skicka och ta emot meddelanden
   const msgPromise = nextEvent(emre.socket, 'message');

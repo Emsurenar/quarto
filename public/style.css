@@ -1218,24 +1218,82 @@ button { font-family: inherit; touch-action: manipulation; color: inherit; }
   .game-wrapper {
     display: flex;
     flex-direction: row;
-    justify-content: center;
-    align-items: stretch;
     height: 100dvh;
     width: 100vw;
     max-width: 100vw;
     background: var(--bg);
   }
 
-  .app {
-    flex: 0 1 540px;
-    width: 540px;
+  /* Board section: grows to fill remaining space, centers its .app child */
+  .game-wrapper > .app {
+    flex: 1 1 0%;
+    max-width: none;
+    width: auto;
     margin: 0;
-    border-right: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-left: 32px;
+    padding-right: 32px;
   }
-  
+
+  /* Constrain inner children of .app so they don't stretch the full width */
+  .game-wrapper > .app > .topbar,
+  .game-wrapper > .app > .task,
+  .game-wrapper > .app > .board-zone,
+  .game-wrapper > .app > .pool,
+  .game-wrapper > .app > .bottombar {
+    width: 100%;
+    max-width: 540px;
+  }
+
+  /* Chat sidebar: elegant fixed-width panel on the right */
   .chat-sidebar {
+    flex: 0 0 340px;
     width: 340px;
-    border-left: 1px solid var(--line-strong);
     display: flex !important;
+    border-left: 1px solid var(--line);
+    background: var(--bg-high);
+    box-shadow: -6px 0 24px rgba(78, 62, 36, 0.06);
+  }
+
+  .chat-sidebar .chat-header {
+    padding: 20px 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .chat-sidebar .chat-title {
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-family: var(--sans);
+    color: var(--ink-dim);
+  }
+
+  .chat-sidebar .chat-messages {
+    background: var(--bg-high);
+  }
+
+  .chat-sidebar .chat-form {
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    padding: 16px 20px;
+  }
+
+  /* Hide the chat menu button on desktop since chat is always visible */
+  #menu-chat-btn {
+    display: none;
+  }
+
+  /* Hide overlay on desktop */
+  .chat-overlay {
+    display: none !important;
+  }
+
+  /* Hide close button on desktop */
+  .chat-close-btn {
+    display: none !important;
   }
 }

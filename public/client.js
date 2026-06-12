@@ -363,14 +363,14 @@ function renderHeader(s, g) {
   const left = $('avatar-left');
   const right = $('avatar-right');
 
-  const myMeta = s.metadata ? s.metadata[me] : { name: me, avatar: AVATARS[me] };
-  const oppMeta = s.metadata ? s.metadata[opp] : { name: opp, avatar: AVATARS[opp] };
+  const myAvatar = AVATARS[me];
+  const oppAvatar = AVATARS[opp];
 
-  if (left.getAttribute('src') !== myMeta.avatar) left.src = myMeta.avatar;
-  if (right.getAttribute('src') !== oppMeta.avatar) right.src = oppMeta.avatar;
+  if (left.getAttribute('src') !== myAvatar) left.src = myAvatar;
+  if (right.getAttribute('src') !== oppAvatar) right.src = oppAvatar;
 
-  if ($('name-left').textContent !== myMeta.name) $('name-left').textContent = myMeta.name;
-  if ($('name-right').textContent !== oppMeta.name) $('name-right').textContent = oppMeta.name;
+  if ($('name-left').textContent !== me) $('name-left').textContent = me;
+  if ($('name-right').textContent !== opp) $('name-right').textContent = opp;
 
   $('sub-left').textContent = 'du';
 
@@ -493,9 +493,7 @@ function shakeBoard() {
 // ---------- Anslutning ----------
 
 function join(seat) {
-  const customName = localStorage.getItem('quartoCustomName') || '';
-  const customAvatar = localStorage.getItem('quartoCustomAvatar') || '';
-  socket.emit('join', seat, customName, customAvatar, (res) => {
+  socket.emit('join', seat, (res) => {
     if (!res.ok) return showToast(res.error);
     lastSeq = res.state.seq;
     auth = res.state;
@@ -588,48 +586,7 @@ socket.on('kudos', ({ text }) => showKudos(text));
 
 // ---------- Lobby & meny ----------
 
-// Initialize custom profile from localStorage
-let customName = localStorage.getItem('quartoCustomName') || '';
-let customAvatar = localStorage.getItem('quartoCustomAvatar') || '';
 
-if ($('custom-name-input')) {
-  $('custom-name-input').value = customName;
-  $('custom-name-input').addEventListener('input', (e) => {
-    customName = e.target.value;
-    localStorage.setItem('quartoCustomName', customName);
-  });
-}
-
-if ($('custom-avatar-preview') && customAvatar) {
-  $('custom-avatar-preview').src = customAvatar;
-}
-
-if ($('custom-avatar-input')) {
-  $('custom-avatar-input').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = 128;
-        canvas.height = 128;
-        const ctx = canvas.getContext('2d');
-        const size = Math.min(img.width, img.height);
-        const sx = (img.width - size) / 2;
-        const sy = (img.height - size) / 2;
-        ctx.drawImage(img, sx, sy, size, size, 0, 0, 128, 128);
-        
-        customAvatar = canvas.toDataURL('image/jpeg', 0.75);
-        localStorage.setItem('quartoCustomAvatar', customAvatar);
-        $('custom-avatar-preview').src = customAvatar;
-      };
-      img.src = event.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
-}
 
 document.querySelectorAll('.identity').forEach((btn) => {
   btn.addEventListener('click', () => {
@@ -827,9 +784,7 @@ function renderMessage(msg, append = true) {
   const bubble = document.createElement('div');
   bubble.className = `chat-bubble ${isMine ? 'mine' : 'theirs'}`;
 
-  const name = auth && auth.metadata && auth.metadata[msg.sender]
-    ? auth.metadata[msg.sender].name
-    : msg.sender;
+  const name = msg.sender;
 
   const date = new Date(msg.timestamp);
   const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });

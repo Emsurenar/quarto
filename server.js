@@ -3,6 +3,7 @@
 // överlever sidomladdningar men nollställs om servern startas om.
 
 const path = require('path');
+const fs = require('fs');
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -14,12 +15,44 @@ const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+const isTest = process.env.NODE_ENV === 'test';
+const STATE_FILE = path.join(__dirname, 'match_state.json');
+
 const match = logic.createMatch();
 match.metadata = {
   Emreos: { name: 'Emreos', avatar: 'emreos.jpg' },
   Raquel: { name: 'Raquel', avatar: 'raquel.jpg' }
 };
 match.messages = [];
+
+// Läs in sparat tillstånd vid serverstart (om vi inte kör tester)
+if (!isTest && fs.existsSync(STATE_FILE)) {
+  try {
+    const data = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
+    if (data.scores) match.scores = data.scores;
+    if (data.game) match.game = data.game;
+    if (data.metadata) match.metadata = data.metadata;
+    if (data.messages) match.messages = data.messages;
+    if (data.nextStarter) match.nextStarter = data.nextStarter;
+    console.log('Matchtillstånd laddat från match_state.json');
+  } catch (err) {
+    console.error('Kunde inte ladda matchtillstånd:', err);
+  }
+}
+
+function saveState() {
+  if (isTest) return;
+  const data = JSON.stringify({
+    scores: match.scores,
+    nextStarter: match.nextStarter,
+    game: match.game,
+    metadata: match.metadata,
+    messages: match.messages
+  }, null, 2);
+  fs.writeFile(STATE_FILE, data, 'utf8', (err) => {
+    if (err) console.error('Kunde inte spara matchtillstånd:', err);
+  });
+}
 
 // Antal anslutna sockets per spelare (samma person kan ha flera flikar).
 const connections = { Emreos: 0, Raquel: 0 };
@@ -38,6 +71,7 @@ function fullState() {
 function broadcastState() {
   seq += 1;
   io.emit('state', fullState());
+  saveState();
 }
 
 // Små utrop som ibland belönar drag. Heta drag (skapar tre i rad med
@@ -71,22 +105,7 @@ io.on('connection', (socket) => {
   // Skicka aktuellt tillstånd direkt vid anslutning
   socket.emit('state', fullState());
 
-  socket.on('join', (...args) => {
-    const seat = args[0];
-    let customName = null;
-    let customAvatar = null;
-    let ack = null;
-
-    if (typeof args[args.length - 1] === 'function') {
-      ack = args[args.length - 1];
-    }
-    if (args.length > 2 && typeof args[1] === 'string') {
-      customName = args[1];
-    }
-    if (args.length > 3 && typeof args[2] === 'string') {
-      customAvatar = args[2];
-    }
-
+  socket.on('join', (seat, ack) => {
     if (!logic.PLAYERS.includes(seat)) {
       if (typeof ack === 'function') ack({ ok: false, error: 'Okänd spelare.' });
       return;
@@ -94,17 +113,6 @@ io.on('connection', (socket) => {
     if (player) connections[player] -= 1; // byter identitet i samma socket
     player = seat;
     connections[player] += 1;
-
-    if (customName && customName.trim()) {
-      match.metadata[seat].name = customName.trim();
-    } else {
-      match.metadata[seat].name = seat;
-    }
-    if (customAvatar) {
-      match.metadata[seat].avatar = customAvatar;
-    } else {
-      match.metadata[seat].avatar = seat === 'Emreos' ? 'emreos.jpg' : 'raquel.jpg';
-    }
 
     io.emit('presence', presence());
     broadcastState();
