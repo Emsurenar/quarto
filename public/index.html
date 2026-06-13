@@ -20,7 +20,7 @@
       <p class="lobby-section-title">Välj en plats att spela på</p>
 
       <div class="seats-container">
-        <button class="seat-card identity" data-player="Emreos" id="seat-1">
+        <button class="seat-card" data-player="Emreos" id="seat-1">
           <div class="seat-avatar-wrap">
             <img src="emreos.jpg" alt="Emreos" class="seat-avatar-img" id="lobby-avatar-left" />
             <span class="seat-status-dot" id="lobby-dot-left"></span>
@@ -32,7 +32,7 @@
           <span class="seat-action-btn" id="lobby-action-left">Välj</span>
         </button>
 
-        <button class="seat-card identity" data-player="Raquel" id="seat-2">
+        <button class="seat-card" data-player="Raquel" id="seat-2">
           <div class="seat-avatar-wrap">
             <img src="raquel.jpg" alt="Raquel" class="seat-avatar-img" id="lobby-avatar-right" />
             <span class="seat-status-dot" id="lobby-dot-right"></span>
@@ -81,6 +81,11 @@
           </button>
         </div>
       </div>
+
+      <details class="howto">
+        <summary>Hur man spelar</summary>
+        <p>Få fyra i rad som delar en egenskap — <em>färg, höjd, form</em> eller <em>massiv/ihålig</em>. Haken: <strong>du väljer pjäsen din motståndare ska placera</strong>. Tror du att raden är klar? <strong>Håll inne Quarto!</strong> Ett falskt utrop förlorar partiet. Först till fem partier tar matchen.</p>
+      </details>
     </div>
   </section>
 
@@ -101,7 +106,10 @@
           </div>
         </div>
   
-        <div class="score-wrap"><span id="score" class="score">0 – 0</span></div>
+        <div class="score-wrap">
+          <span id="score" class="score">0 – 0</span>
+          <span id="match-cap" class="match-cap">först till 5</span>
+        </div>
   
         <div class="player-card right" id="card-right">
           <div class="player-meta right">
@@ -118,6 +126,7 @@
           <button id="menu-btn" title="Meny">⋯<span id="menu-unread" class="menu-unread hidden"></span></button>
           <div id="menu" class="menu hidden">
             <button id="menu-chat-btn">💬 Chatt</button>
+            <button id="sound-toggle-btn">🔊 Ljud på</button>
             <button id="reset-scores-btn">⟲ Nollställ poäng</button>
             <button id="switch-player">⇄ Byt spelare</button>
           </div>
@@ -137,7 +146,10 @@
       <div id="pool" class="pool"></div>
   
       <div class="bottombar">
-        <button id="quarto-btn" class="quarto-btn" disabled>Quarto!</button>
+        <button id="quarto-btn" class="quarto-btn" disabled>
+          <span class="quarto-fill"></span>
+          <span class="quarto-label">Quarto!</span>
+        </button>
         <button id="draw-btn" class="draw-btn hidden">Oavgjort?</button>
       </div>
   

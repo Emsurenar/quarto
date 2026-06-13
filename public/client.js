@@ -18,6 +18,13 @@ let mode = null;     // 'online' | 'bot' — väljs i lobbyn
 let conn = socket;   // aktiv spelkanal: socket eller lokal botsession
 let botLevel = null;
 
+// Matchformat: först till så här många vunna partier tar hela matchen.
+const MATCH_TARGET = 5;
+
+// Ljud (och vibration) kan stängas av; valet sparas mellan besök.
+let soundEnabled = true;
+try { soundEnabled = localStorage.getItem('quarto.muted') !== '1'; } catch (e) { /* lagring ej kritisk */ }
+
 // I botläget sitter boten på motståndarens plats; visa den med eget
 // namn och porträtt i stället för platsens riktiga namn.
 function displayName(p) {
@@ -40,8 +47,13 @@ function effective() { return predicted || auth; }
 
 // ---------- Pjäsgrafik ----------
 // Pjäs-id är 4 bitar: bit0 mörk, bit1 hög, bit2 fyrkantig, bit3 ihålig.
-// Sidovy: elfenben mot ebenholts, kraftig höjdskillnad, tydligt hål med
-// ljus kant för ihåliga pjäser, glansstråk för lyster.
+// Polerade objekt i sidovy: champagne-metall mot espresso-grafit. Kroppen
+// skuggas som en cylinder (mörk kant → ljus dager → mörk skuggsida), toppen
+// fångar mest ljus, en mjuk reflex löper längs sidan, en nedre ambient­ocklusion
+// tyngder foten och en inbäddad kontaktskugga jordar pjäsen. Allt ritas i
+// vektor utan oskärpefilter, så skuggorna förblir skarpa även på mobil/retina.
+
+let svgGradSeq = 0;
 
 function pieceSVG(id) {
   const dark = id & 1;
@@ -49,53 +61,92 @@ function pieceSVG(id) {
   const square = id & 4;
   const hollow = id & 8;
 
-  // Champagne-metall mot varm espresso-grafit: maskinbearbetade objekt
-  // i samma varma register som det ljusa alabaster-rummet.
+  // Unikt id-prefix per SVG-instans. Samma pjäs kan finnas i förråd, hand,
+  // bräde och flygande klon samtidigt — delade id:n vore ogiltig HTML.
+  const u = `q${id}_${svgGradSeq++}`;
+
   const c = dark
     ? {
-        grad: 'qg-d',
-        g1: '#5c554c',
-        g2: '#211d18',
-        top: '#6e665b',
-        stroke: '#14110d',
-        hole: '#0a0806',
-        holeRim: 'rgba(244, 234, 214, 0.45)',
-        gloss: 'rgba(255, 250, 240, 0.18)',
+        edge: '#211c16', hi: '#776d61', mid: '#39332c', edge2: '#100d0a',
+        topCtr: '#8c8174', topRim: '#221d17', stroke: '#0b0907',
+        hole: '#070504', holeDeep: '#000000', holeRim: 'rgba(232, 224, 206, 0.5)',
+        spec: '#fffaf0', specA: 0.5, aoCol: '#000000', aoA: 0.5,
+        shCol: '#080604', shA: 0.5,
       }
     : {
-        grad: 'qg-l',
-        g1: '#ecd7a4',
-        g2: '#9c7840',
-        top: '#f4e7c2',
-        stroke: '#63491c',
-        hole: '#46330f',
-        holeRim: 'rgba(55, 40, 12, 0.6)',
-        gloss: 'rgba(255, 255, 255, 0.5)',
+        edge: '#a37c3d', hi: '#fdf1c8', mid: '#cca25b', edge2: '#6d5020',
+        topCtr: '#fff7e0', topRim: '#bd934c', stroke: '#5a4317',
+        hole: '#3a2a0b', holeDeep: '#221806', holeRim: 'rgba(255, 247, 224, 0.85)',
+        spec: '#fffdf6', specA: 0.85, aoCol: '#4a3411', aoA: 0.42,
+        shCol: '#3c2a0d', shA: 0.5,
       };
 
   const topY = tall ? 7 : 41; // överdriven höjdskillnad gör hög/låg omisskännlig
   const h = 66 - topY;
-  let s = `<defs><linearGradient id="${c.grad}" x1="0" y1="0" x2="1" y2="0">
-    <stop offset="0" stop-color="${c.g1}"/><stop offset="0.55" stop-color="${c.g1}"/>
-    <stop offset="1" stop-color="${c.g2}"/></linearGradient></defs>`;
+  const bodyTop = topY + 5; // där tubväggen börjar (under toppellipsen)
+  const wallH = h - 12;     // rak väggdel
+
+  let defs = '<defs>';
+  // Cylinderskuggning över kroppens bredd.
+  defs += `<linearGradient id="b${u}" x1="0" y1="0" x2="1" y2="0">`
+    + `<stop offset="0" stop-color="${c.edge}"/>`
+    + `<stop offset="0.24" stop-color="${c.hi}"/>`
+    + `<stop offset="0.52" stop-color="${c.mid}"/>`
+    + `<stop offset="1" stop-color="${c.edge2}"/></linearGradient>`;
+  // Ambientocklusion: mörknar mot foten.
+  defs += `<linearGradient id="a${u}" x1="0" y1="0" x2="0" y2="1">`
+    + `<stop offset="0.4" stop-color="${c.aoCol}" stop-opacity="0"/>`
+    + `<stop offset="1" stop-color="${c.aoCol}" stop-opacity="${c.aoA}"/></linearGradient>`;
+  // Mjukkantad reflex.
+  defs += `<linearGradient id="s${u}" x1="0" y1="0" x2="1" y2="0">`
+    + `<stop offset="0" stop-color="${c.spec}" stop-opacity="0"/>`
+    + `<stop offset="0.5" stop-color="${c.spec}" stop-opacity="${c.specA}"/>`
+    + `<stop offset="1" stop-color="${c.spec}" stop-opacity="0"/></linearGradient>`;
+  // Kontaktskugga (radiell, tonar ut till genomskinligt).
+  defs += `<radialGradient id="h${u}" cx="0.5" cy="0.5" r="0.5">`
+    + `<stop offset="0" stop-color="${c.shCol}" stop-opacity="${c.shA}"/>`
+    + `<stop offset="0.6" stop-color="${c.shCol}" stop-opacity="${c.shA * 0.4}"/>`
+    + `<stop offset="1" stop-color="${c.shCol}" stop-opacity="0"/></radialGradient>`;
+  // Topp: rund pjäs får svarvad lyster, fyrkantig en sned fasning.
+  if (square) {
+    defs += `<linearGradient id="t${u}" x1="0.1" y1="0" x2="0.9" y2="1">`
+      + `<stop offset="0" stop-color="${c.topCtr}"/>`
+      + `<stop offset="1" stop-color="${c.topRim}"/></linearGradient>`;
+  } else {
+    defs += `<radialGradient id="t${u}" cx="0.4" cy="0.32" r="0.9">`
+      + `<stop offset="0" stop-color="${c.topCtr}"/>`
+      + `<stop offset="1" stop-color="${c.topRim}"/></radialGradient>`;
+  }
+  if (hollow) {
+    defs += `<radialGradient id="o${u}" cx="0.5" cy="0.62" r="0.72">`
+      + `<stop offset="0" stop-color="${c.holeDeep}"/>`
+      + `<stop offset="1" stop-color="${c.hole}"/></radialGradient>`;
+  }
+  defs += '</defs>';
+
+  // Kontaktskugga bakom pjäsen — vektor, ingen oskärpa → skarp på mobil.
+  let s = `<ellipse cx="24" cy="67" rx="${square ? 20 : 18.5}" ry="5" fill="url(#h${u})"/>`;
 
   if (square) {
-    s += `<rect x="6" y="${topY}" width="36" height="${h}" rx="3.5" fill="url(#${c.grad})" stroke="${c.stroke}" stroke-width="1.6"/>`;
-    s += `<rect x="6" y="${topY}" width="36" height="9" rx="3.5" fill="${c.top}" stroke="${c.stroke}" stroke-width="1.3"/>`;
-    s += `<rect x="9.5" y="${topY + 11}" width="4" height="${h - 15}" rx="2" fill="${c.gloss}"/>`;
+    s += `<rect x="6.5" y="${topY}" width="35" height="${h}" rx="3.6" fill="url(#b${u})" stroke="${c.stroke}" stroke-width="1.3"/>`;
+    s += `<rect x="6.5" y="${topY}" width="35" height="${h}" rx="3.6" fill="url(#a${u})"/>`;
+    s += `<rect x="6.5" y="${topY}" width="35" height="9" rx="3.6" fill="url(#t${u})" stroke="${c.stroke}" stroke-width="1"/>`;
+    s += `<rect x="10" y="${topY + 12}" width="4.5" height="${h - 17}" rx="2.25" fill="url(#s${u})"/>`;
     if (hollow) {
-      s += `<rect x="15" y="${topY + 2.2}" width="18" height="4.8" rx="2.4" fill="${c.hole}" stroke="${c.holeRim}" stroke-width="1.1"/>`;
+      s += `<rect x="15" y="${topY + 2}" width="18" height="5" rx="2.5" fill="url(#o${u})" stroke="${c.holeRim}" stroke-width="1"/>`;
     }
   } else {
-    s += `<path d="M6 ${topY + 5} v${h - 12} a18 7 0 0 0 36 0 v-${h - 12} z" fill="url(#${c.grad})" stroke="${c.stroke}" stroke-width="1.6"/>`;
-    s += `<ellipse cx="24" cy="${topY + 5}" rx="18" ry="6.5" fill="${c.top}" stroke="${c.stroke}" stroke-width="1.3"/>`;
-    s += `<path d="M10.5 ${topY + 12} v${h - 22} a14 5 0 0 0 3.5 3 v-${h - 22}z" fill="${c.gloss}"/>`;
+    s += `<path d="M6 ${bodyTop} v${wallH} a18 7 0 0 0 36 0 v-${wallH} z" fill="url(#b${u})" stroke="${c.stroke}" stroke-width="1.3"/>`;
+    s += `<path d="M6 ${bodyTop} v${wallH} a18 7 0 0 0 36 0 v-${wallH} z" fill="url(#a${u})"/>`;
+    s += `<ellipse cx="24" cy="${bodyTop}" rx="18" ry="6.5" fill="url(#t${u})" stroke="${c.stroke}" stroke-width="1"/>`;
+    s += `<rect x="11.5" y="${bodyTop + 4}" width="4.5" height="${wallH - 1}" rx="2.25" fill="url(#s${u})"/>`;
     if (hollow) {
-      s += `<ellipse cx="24" cy="${topY + 5}" rx="9.5" ry="3.4" fill="${c.hole}" stroke="${c.holeRim}" stroke-width="1.1"/>`;
+      s += `<ellipse cx="24" cy="${bodyTop}" rx="9.5" ry="3.4" fill="url(#o${u})"/>`;
+      s += `<path d="M15 ${bodyTop} a9.5 3.4 0 0 1 18 0" fill="none" stroke="${c.holeRim}" stroke-width="0.9" stroke-linecap="round"/>`;
     }
   }
 
-  return `<svg viewBox="0 0 48 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${pieceName(id)}">${s}</svg>`;
+  return `<svg viewBox="0 0 48 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${pieceName(id)}">${defs}${s}</svg>`;
 }
 
 function pieceName(id) {
@@ -124,7 +175,16 @@ function tone(freq, start, dur, vol, type = 'sine') {
   osc.stop(t + dur + 0.05);
 }
 
+// Lätt haptik på mobil; följer samma av/på som ljudet (tyst läge = ingen vibb).
+function haptic(pattern) {
+  if (!soundEnabled) return;
+  try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) { /* vibration ej kritisk */ }
+}
+
 function playSound(kind) {
+  if (!soundEnabled) return;
+  if (kind === 'place') haptic(12);
+  else if (kind === 'gong') haptic([0, 35, 45, 80]);
   try {
     audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -160,6 +220,7 @@ const customAudios = {
 };
 
 function playCustomSound(key, fallbackKind) {
+  if (!soundEnabled) return;
   const audio = customAudios[key];
   if (audio) {
     audio.currentTime = 0;
@@ -345,7 +406,7 @@ function applyState(s) {
   renderBoard(g);
   renderPool(g);
   renderButtons(g);
-  renderGameOver(g);
+  renderGameOver(s, g);
 
   // Övergångar efter att DOM:en fått sitt nya innehåll.
   if (flight) {
@@ -394,6 +455,13 @@ function renderHeader(s, g) {
   $('sub-left').textContent = 'du';
 
   $('score').textContent = `${s.scores[me]} – ${s.scores[opp]}`;
+  const cap = $('match-cap');
+  if (cap) {
+    const lead = Math.max(s.scores[me], s.scores[opp]);
+    const matchPoint = !g.gameOver && lead === MATCH_TARGET - 1;
+    cap.textContent = matchPoint ? 'matchboll' : `först till ${MATCH_TARGET}`;
+    cap.classList.toggle('hot', matchPoint);
+  }
   const online = mode === 'bot' ? true : s.presence[opp];
   $('sub-right').textContent = mode === 'bot' ? BOT_LEVELS[botLevel] : online ? 'online' : 'offline';
   $('sub-right').classList.toggle('online', online);
@@ -438,6 +506,8 @@ function renderTask(g) {
 
 function renderBoard(g) {
   const canPlace = !g.gameOver && g.turn === me && g.phase === 'place';
+  // Vid vinst: lyft fram den vinnande raden genom att dämpa övriga pjäser.
+  $('board').classList.toggle('won', g.gameOver && !!g.winningLine);
   for (let i = 0; i < 16; i++) {
     const ce = cellEls[i];
     const piece = g.board[i];
@@ -450,6 +520,10 @@ function renderBoard(g) {
     ce.btn.classList.toggle('last', piece !== null && i === g.lastMove && !g.gameOver);
     ce.btn.classList.toggle('win', !!(g.winningLine && g.winningLine.includes(i)));
     ce.btn.disabled = !placeable;
+    ce.btn.setAttribute('aria-label',
+      piece !== null ? pieceName(piece)
+      : placeable ? `Placera pjäsen på ruta ${i + 1}`
+      : `Ruta ${i + 1}, tom`);
   }
 }
 
@@ -472,8 +546,9 @@ function renderButtons(g) {
   $('draw-btn').classList.toggle('hidden', !(myTurn && full));
 }
 
-function renderGameOver(g) {
+function renderGameOver(s, g) {
   const ov = $('gameover');
+  const btn = $('new-game-btn');
   if (!g.gameOver) {
     ov.classList.add('hidden');
     return;
@@ -483,18 +558,33 @@ function renderGameOver(g) {
   const mine = !g.draw && g.winner === me;
   ov.classList.toggle('win', mine);
 
+  // Tog vinnaren hela matchen? Då blir det en match-final, inte bara ett parti.
+  const matchWin = !g.draw && g.winner && s.scores[g.winner] >= MATCH_TARGET;
+  ov.classList.toggle('match', !!matchWin);
+
   let title, sub;
-  if (g.draw) {
+  if (matchWin) {
+    title = mine ? 'Matchen är din!' : `${displayName(g.winner)} tar matchen`;
+    sub = `Matchen slutade ${s.scores[me]}–${s.scores[opponent()]}. ${mine ? 'Mästerligt spelat.' : 'Dags för revansch?'}`;
+    btn.textContent = 'Ny match';
+    btn.dataset.match = '1';
+  } else if (g.draw) {
     title = 'Oavgjort';
     sub = 'Alla sexton pjäser lagda — brädet vilar.';
+    btn.textContent = 'Nytt parti';
+    delete btn.dataset.match;
   } else if (g.endReason === 'falseClaim') {
     title = mine ? 'Du vann!' : `${displayName(g.winner)} vann`;
     sub = mine
       ? `${displayName(opponent())} ropade Quarto utan vinnande rad.`
       : 'Du ropade Quarto utan vinnande rad.';
+    btn.textContent = 'Nytt parti';
+    delete btn.dataset.match;
   } else {
     title = mine ? 'Quarto — du vann!' : `Quarto! ${displayName(g.winner)} vann`;
     sub = 'Fyra i rad med en gemensam egenskap.';
+    btn.textContent = 'Nytt parti';
+    delete btn.dataset.match;
   }
   $('gameover-title').textContent = title;
   $('gameover-sub').textContent = sub;
@@ -630,7 +720,7 @@ socket.on('kudos', ({ text }) => {
 
 
 
-document.querySelectorAll('.identity').forEach((btn) => {
+document.querySelectorAll('.seat-card').forEach((btn) => {
   btn.addEventListener('click', () => {
     mode = 'online';
     conn = socket;
@@ -682,6 +772,22 @@ $('switch-player').addEventListener('click', () => {
   location.reload();
 });
 
+// Ljud av/på (gäller även vibration). Menyn lämnas öppen så valet syns.
+function renderSoundToggle() {
+  const btn = $('sound-toggle-btn');
+  if (btn) btn.textContent = soundEnabled ? '🔊 Ljud på' : '🔇 Ljud av';
+}
+if ($('sound-toggle-btn')) {
+  $('sound-toggle-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    soundEnabled = !soundEnabled;
+    try { localStorage.setItem('quarto.muted', soundEnabled ? '0' : '1'); } catch (e) { /* lagring ej kritisk */ }
+    renderSoundToggle();
+    if (soundEnabled) playSound('select'); // liten bekräftelseton
+  });
+}
+renderSoundToggle();
+
 // Nollställning av poäng kräver två tryck — inga blockerande dialogrutor.
 let resetArmed = false;
 let resetTimer = null;
@@ -703,9 +809,55 @@ $('reset-scores-btn').addEventListener('click', (e) => {
 
 // ---------- Spelknappar ----------
 
-$('quarto-btn').addEventListener('click', () => conn.emit('claimQuarto'));
+// Quarto ropas genom att HÅLLA knappen intryckt en stund. Ett oavsiktligt
+// tryck kan annars ge en direkt förlust (falskt utrop) — hållet gör utropet
+// medvetet, och en mässingsfyllnad visar förloppet.
+const QUARTO_HOLD_MS = 600;
+let quartoHoldTimer = null;
+let quartoHolding = false;
+
+function startQuartoHold() {
+  const btn = $('quarto-btn');
+  if (btn.disabled || quartoHolding) return;
+  quartoHolding = true;
+  btn.style.setProperty('--quarto-hold', QUARTO_HOLD_MS + 'ms');
+  btn.classList.add('holding');
+  quartoHoldTimer = setTimeout(() => {
+    quartoHolding = false;
+    btn.classList.remove('holding');
+    conn.emit('claimQuarto');
+  }, QUARTO_HOLD_MS);
+}
+
+function endQuartoHold(hintOnEarly) {
+  if (!quartoHolding) return;
+  quartoHolding = false;
+  clearTimeout(quartoHoldTimer);
+  $('quarto-btn').classList.remove('holding');
+  if (hintOnEarly) showToast('Håll knappen intryckt för att ropa Quarto', true);
+}
+
+(() => {
+  const btn = $('quarto-btn');
+  btn.addEventListener('pointerdown', (e) => { e.preventDefault(); startQuartoHold(); });
+  btn.addEventListener('pointerup', () => endQuartoHold(true));
+  btn.addEventListener('pointerleave', () => endQuartoHold(false));
+  btn.addEventListener('pointercancel', () => endQuartoHold(false));
+  btn.addEventListener('keydown', (e) => {
+    if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) { e.preventDefault(); startQuartoHold(); }
+  });
+  btn.addEventListener('keyup', (e) => {
+    if (e.key === ' ' || e.key === 'Enter') endQuartoHold(true);
+  });
+})();
+
 $('draw-btn').addEventListener('click', () => conn.emit('claimDraw'));
-$('new-game-btn').addEventListener('click', () => conn.emit('newGame'));
+
+$('new-game-btn').addEventListener('click', () => {
+  // Efter en avgjord match: nollställ poängen och starta en ny match.
+  if ($('new-game-btn').dataset.match === '1') conn.emit('resetScores');
+  conn.emit('newGame');
+});
 
 // ---------- Turbanderoll ----------
 
@@ -823,12 +975,12 @@ function showKudos(text) {
 // ---------- Toast ----------
 
 let toastTimer = null;
-function showToast(msg) {
+function showToast(msg, silent) {
   const toast = $('toast');
   if (!toast) return;
   toast.textContent = msg;
   toast.classList.remove('hidden');
-  playCustomSound('omojligt');
+  if (!silent) playCustomSound('omojligt');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => toast.classList.add('hidden'), 2500);
 }
